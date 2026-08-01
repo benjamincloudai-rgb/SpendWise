@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -321,6 +322,22 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             password: _passwordController.text.trim(),
           );
 
+      // Create user document in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+            'fullName': _nameController.text.trim(),
+            'email': _emailController.text.trim(),
+            'currency': 'INR',
+            'monthlyBudget': 0,
+            'profileCompleted': false,
+            'onboardingCompleted': false,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+
+      // Send verification email
       await userCredential.user!.sendEmailVerification();
 
       if (!mounted) return;
