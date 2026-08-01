@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
+import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
+import 'package:spendwise/features/transactions/screens/transfer_screen.dart';
+import 'package:spendwise/features/transactions/screens/budget_screen.dart';
+import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -11,7 +16,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-
   // Dynamic placeholder variables set to zero as requested
   String userName = "Loading...";
 
@@ -27,23 +31,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadUserData() async {
-  try {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
 
-    if (doc.exists) {
-      setState(() {
-        userName = doc['fullName'] ?? 'User';
-      });
+      if (doc.exists) {
+        setState(() {
+          userName = doc['fullName'] ?? 'User';
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading user: $e");
     }
-  } catch (e) {
-    debugPrint("Error loading user: $e");
   }
-}
+
   // Strict colors inherited from the login/register theme
   final Color colorPrimary = const Color(0xFF006E2F);
   final Color colorPrimaryContainer = const Color(0xFF22C55E);
@@ -165,14 +170,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(width: 8),
-
               IconButton(
                 onPressed: () {},
                 icon: Icon(Icons.notifications_none, color: colorSecondary),
               ),
-
               CircleAvatar(
                 backgroundColor: colorSurfaceContainerLow,
                 foregroundColor: colorSecondary,
@@ -181,7 +183,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-        
       ),
     );
   }
@@ -246,7 +247,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildOverviewColumn('Income', "₹${monthlyIncome.toStringAsFixed(0)}", colorPrimary),
+                    _buildOverviewColumn(
+                      'Income',
+                      "₹${monthlyIncome.toStringAsFixed(0)}",
+                      colorPrimary,
+                    ),
                     _buildOverviewColumn(
                       'Expenses',
                       "₹${monthlyExpense.toStringAsFixed(0)}",
@@ -307,24 +312,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icons.add_circle,
           colorPrimaryContainer.withOpacity(0.1),
           colorPrimary,
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
+            );
+          },
         ),
         _buildQuickActionButton(
           'Add Income',
           Icons.payments,
           colorSecondaryFixed.withOpacity(0.3),
           colorSecondary,
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddIncomeScreen()),
+            );
+          },
         ),
         _buildQuickActionButton(
           'Transfer',
           Icons.sync,
           colorTertiaryContainer.withOpacity(0.2),
           colorTertiary,
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TransferScreen()),
+            );
+          },
         ),
         _buildQuickActionButton(
           'Budget',
           Icons.account_balance_wallet,
           colorOnSurfaceVariant.withOpacity(0.05),
           colorOnSurfaceVariant,
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BudgetScreen()),
+            );
+          },
         ),
       ],
     );
@@ -335,6 +364,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     IconData icon,
     Color bgCircleColor,
     Color iconColor,
+    VoidCallback onTap,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -353,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {},
+          onTap: onTap,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -555,7 +585,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorPrimary,
                   foregroundColor: Colors.white,
@@ -584,7 +619,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Floating/Sticky Bottom Navigation Bar (Configured with Only 4 Items)
+  // Sticky Bottom Navigation Bar (Configured with Only 4 Items & Symmetrical Linear Fade Routing)
   Widget _buildBottomNavigation(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -609,7 +644,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               Expanded(
-                child: _buildNavItem(Icons.receipt_long, 'History'),
+                child: _buildNavItem(
+                  Icons.receipt_long,
+                  'History',
+                  onTap: () {
+                    // Triggers a bidirectional symmetric linear fade route to the History screen
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const TransactionsScreen(),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                    .animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves
+                                            .linear, // Perfect flat linear curves in both directions
+                                      ),
+                                    ),
+                                child: child,
+                              );
+                            },
+                        transitionDuration: const Duration(milliseconds: 200),
+                        reverseTransitionDuration: const Duration(
+                          milliseconds: 200,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
               Expanded(child: _buildNavItem(Icons.leaderboard, 'Stats')),
               Expanded(child: _buildNavItem(Icons.person, 'Profile')),
@@ -620,9 +686,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, {bool isActive = false}) {
+  Widget _buildNavItem(
+    IconData icon,
+    String label, {
+    bool isActive = false,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -642,9 +713,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: isActive ? Colors.white : colorSecondary,
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               label,
               maxLines: 1,
