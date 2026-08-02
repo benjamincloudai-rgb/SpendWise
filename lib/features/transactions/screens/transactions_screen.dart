@@ -57,53 +57,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   final Color colorErrorContainer = const Color(0xFFFFDAD6);
 
   // Mock list of transactions prepared for future Firestore synchronization
-  final List<TransactionModel> _allTransactions = [
-    TransactionModel(
-      id: '1',
-      category: 'Food',
-      note: 'Lunch at Bistro',
-      amount: 850.0,
-      date: DateTime.now(),
-      time: '12:45 PM',
-      type: TransactionType.expense,
-    ),
-    TransactionModel(
-      id: '2',
-      category: 'Salary',
-      note: 'Monthly Salary',
-      amount: 40000.0,
-      date: DateTime.now(),
-      time: '09:00 AM',
-      type: TransactionType.income,
-    ),
-    TransactionModel(
-      id: '3',
-      category: 'Groceries',
-      note: 'Weekly stock up',
-      amount: 2400.0,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      time: '06:20 PM',
-      type: TransactionType.expense,
-    ),
-    TransactionModel(
-      id: '4',
-      category: 'Transport',
-      note: 'Uber to Office',
-      amount: 420.0,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      time: '08:15 AM',
-      type: TransactionType.expense,
-    ),
-    TransactionModel(
-      id: '5',
-      category: 'Freelance',
-      note: 'UI Design Project',
-      amount: 5000.0,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      time: '02:30 PM',
-      type: TransactionType.income,
-    ),
-  ];
+  final List<TransactionModel> _allTransactions = [];
 
   @override
   void initState() {
@@ -147,12 +101,16 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   // Reactive computed transaction filters
   List<TransactionModel> get _filteredTransactions {
     return _allTransactions.where((tx) {
-      if (_selectedFilter == 'Expenses' && tx.type != TransactionType.expense)
+      if (_selectedFilter == 'Expenses' && tx.type != TransactionType.expense) {
         return false;
-      if (_selectedFilter == 'Income' && tx.type != TransactionType.income)
+      }
+      if (_selectedFilter == 'Income' && tx.type != TransactionType.income) {
         return false;
-      if (_selectedFilter == 'Transfers' && tx.type != TransactionType.transfer)
+      }
+      if (_selectedFilter == 'Transfers' &&
+          tx.type != TransactionType.transfer) {
         return false;
+      }
 
       final query = _searchController.text.trim().toLowerCase();
       if (query.isNotEmpty) {

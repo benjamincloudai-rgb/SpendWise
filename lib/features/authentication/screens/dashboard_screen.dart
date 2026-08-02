@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
 import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
 import 'package:spendwise/features/transactions/screens/transfer_screen.dart';
-import 'package:spendwise/features/transactions/screens/budget_screen.dart';
+import 'package:spendwise/features/budget/screens/budget_screen.dart';
 import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -339,7 +339,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const TransferScreen()),
+              MaterialPageRoute(builder: (_) => const BudgetScreen()),
             );
           },
         ),
