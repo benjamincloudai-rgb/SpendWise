@@ -7,6 +7,7 @@ import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
 import 'package:spendwise/features/transactions/screens/transfer_screen.dart';
 import 'package:spendwise/features/budget/screens/budget_screen.dart';
 import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
+import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -355,6 +356,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           },
         ),
+        
       ],
     );
   }
@@ -677,7 +679,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
               ),
-              Expanded(child: _buildNavItem(Icons.leaderboard, 'Stats')),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.leaderboard,
+                  'Stats',
+                  onTap: () {
+                    // Triggers a bidirectional symmetric linear fade route to the History screen
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const StatisticsScreen(),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                    .animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves
+                                            .linear, // Perfect flat linear curves in both directions
+                                      ),
+                                    ),
+                                child: child,
+                              );
+                            },
+                        transitionDuration: const Duration(milliseconds: 200),
+                        reverseTransitionDuration: const Duration(
+                          milliseconds: 200,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
               Expanded(child: _buildNavItem(Icons.person, 'Profile')),
             ],
           ),

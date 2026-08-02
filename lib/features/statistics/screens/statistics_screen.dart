@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -53,6 +52,37 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   void dispose() {
     _floatController.dispose();
     super.dispose();
+  }
+
+  // Opens Flutter date picker overlay styled with SpendWise Green theme
+  Future<void> _showMonthPicker(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: colorPrimary,
+              onPrimary: Colors.white,
+              onSurface: colorOnSurface,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: colorPrimary),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
   }
 
   // Helper formatting numbers with commas
@@ -122,7 +152,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   left: screenWidth * 0.05,
                   right: screenWidth * 0.05,
                   top: 76, // Clears sticky top bar
-                  bottom: 120, // Clears bottom navigation area safely
+                  bottom: 32, // Adjusted padding without bottom navigation
                 ),
                 child: Center(
                   child: ConstrainedBox(
@@ -177,24 +207,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 child: _buildHeader(context),
               ),
             ),
-
-            // --- Fixed Bottom Navigation Bar ---
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _EntranceAnimation(
-                delayMs: 480,
-                child: _buildBottomNavigation(context),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  // Header Component (Top App Bar)
+  // Header Component (Top App Bar - Fixed to prevent horizontal RenderFlex overflows)
   Widget _buildHeader(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
@@ -208,38 +227,35 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: colorOnSurface,
-                      size: 28,
-                    ),
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Statistics',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: colorOnSurface,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
+              // Back Button on the left
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(Icons.arrow_back, color: colorOnSurface, size: 28),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
               ),
+              const SizedBox(width: 16),
 
-              // Custom Month Picker Trigger Button (August 2026 initialized to DateTime.now())
+              // Statistics title nested inside Expanded to avoid squeezing
+              Expanded(
+                child: Text(
+                  'Statistics',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: colorOnSurface,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Responsive Month Picker Selector Pill on the right (Unnecessary extra icon deleted)
               InkWell(
-                onTap: () {
-                  // TODO: Month picker functionality
-                },
+                onTap: () => _showMonthPicker(context),
                 borderRadius: BorderRadius.circular(100),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -254,6 +270,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     ),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         _getFormattedSelectedMonth(),
@@ -888,126 +905,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Sticky Bottom Navigation Bar (Matching Dashboard precisely)
-  Widget _buildBottomNavigation(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Expanded(
-                child: _buildNavItem(
-                  Icons.home,
-                  'Home',
-                  onTap: () {
-                    Navigator.of(context)
-                        .pop(); // Symmetrical linear fade pop
-                  },
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  Icons.receipt_long,
-                  'History',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      PageRouteBuilder(
-                        transitionDuration: const Duration(milliseconds: 200),
-                        reverseTransitionDuration:
-                            const Duration(milliseconds: 200),
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const TransactionsScreen(),
-                        transitionsBuilder: (context, animation,
-                            secondaryAnimation, child) {
-                          return FadeTransition(
-                            opacity: CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.linear,
-                            ),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  Icons.pie_chart,
-                  'Stats',
-                  isActive: true, // Current page active highlight
-                ),
-              ),
-              Expanded(child: _buildNavItem(Icons.person, 'Profile')),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    IconData icon,
-    String label, {
-    bool isActive = false,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? Theme.of(context).colorScheme.primaryContainer
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: isActive
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondary,
-                size: 22,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
