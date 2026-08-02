@@ -89,6 +89,7 @@ flutter:
     - assets/images/spendwise_logo.png
     - assets/icons/google.png
     - assets/icons/apple.png
+    - assets/images/profile_placeholder.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -8,6 +8,7 @@ import 'package:spendwise/features/transactions/screens/transfer_screen.dart';
 import 'package:spendwise/features/budget/screens/budget_screen.dart';
 import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
 import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
+import 'package:spendwise/features/profile/screens/profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -713,7 +714,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
               ),
-              Expanded(child: _buildNavItem(Icons.person, 'Profile')),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.person,
+                  'Profile',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const ProfileScreen(),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                    .animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.linear,
+                                      ),
+                                    ),
+                                child: child,
+                              );
+                            },
+                        transitionDuration: const Duration(milliseconds: 200),
+                        reverseTransitionDuration: const Duration(
+                          milliseconds: 200,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
