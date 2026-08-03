@@ -9,6 +9,7 @@ import 'package:spendwise/features/budget/screens/budget_screen.dart';
 import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
 import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
 import 'package:spendwise/features/profile/screens/profile_screen.dart';
+import 'package:spendwise/features/dashboard/widgets/recent_transactions_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -121,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 24),
                         _buildMonthlySpendingSection(),
                         const SizedBox(height: 24),
-                        _buildRecentTransactionsSection(),
+                        RecentTransactionsWidget(),
                       ],
                     ),
                   ),
@@ -618,180 +619,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // Sticky Bottom Navigation Bar (Configured with Only 4 Items & Symmetrical Linear Fade Routing)
-  Widget _buildBottomNavigation(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+  
 
-    return Container(
-      color: colorSurfaceContainerLowest,
-      padding: EdgeInsets.only(
-        top: 12,
-        bottom: MediaQuery.paddingOf(context).bottom + 8,
-        left: screenWidth * 0.05,
-        right: screenWidth * 0.05,
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildNavItem(
-                  Icons.dashboard,
-                  'Dashboard',
-                  isActive: true,
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  Icons.receipt_long,
-                  'History',
-                  onTap: () {
-                    // Triggers a bidirectional symmetric linear fade route to the History screen
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const TransactionsScreen(),
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: Tween<double>(begin: 0.0, end: 1.0)
-                                    .animate(
-                                      CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves
-                                            .linear, // Perfect flat linear curves in both directions
-                                      ),
-                                    ),
-                                child: child,
-                              );
-                            },
-                        transitionDuration: const Duration(milliseconds: 200),
-                        reverseTransitionDuration: const Duration(
-                          milliseconds: 200,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  Icons.leaderboard,
-                  'Stats',
-                  onTap: () {
-                    // Triggers a bidirectional symmetric linear fade route to the History screen
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const StatisticsScreen(),
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: Tween<double>(begin: 0.0, end: 1.0)
-                                    .animate(
-                                      CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves
-                                            .linear, // Perfect flat linear curves in both directions
-                                      ),
-                                    ),
-                                child: child,
-                              );
-                            },
-                        transitionDuration: const Duration(milliseconds: 200),
-                        reverseTransitionDuration: const Duration(
-                          milliseconds: 200,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  Icons.person,
-                  'Profile',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const ProfileScreen(),
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: Tween<double>(begin: 0.0, end: 1.0)
-                                    .animate(
-                                      CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves.linear,
-                                      ),
-                                    ),
-                                child: child,
-                              );
-                            },
-                        transitionDuration: const Duration(milliseconds: 200),
-                        reverseTransitionDuration: const Duration(
-                          milliseconds: 200,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    IconData icon,
-    String label, {
-    bool isActive = false,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive ? colorPrimaryContainer : Colors.transparent,
-              ),
-              child: Icon(
-                icon,
-                size: 22,
-                color: isActive ? Colors.white : colorSecondary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? colorPrimary : colorSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // Background blur bubble element

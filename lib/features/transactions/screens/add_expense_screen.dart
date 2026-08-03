@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:spendwise/models/transaction_model.dart';
+import 'package:spendwise/services/transaction_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
+
+  
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -13,6 +18,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   late AnimationController _floatController;
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final TransactionService _transactionService = TransactionService();
 
   // Selected state variables
   String _selectedCategory = '🛒 Shopping';
@@ -67,6 +73,41 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
     _CategoryItem('❤️ Family', Icons.favorite, color: Colors.pinkAccent),
     _CategoryItem('🐶 Pets', Icons.pets, color: Colors.orangeAccent),
   ];
+
+  Future<void> _saveExpense() async {
+    try {
+      final amount = double.parse(_amountController.text.trim());
+
+      final transaction = TransactionModel(
+        id: '',
+        amount: amount,
+        categoryId: _selectedCategory,
+        note: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        type: TransactionType.expense,
+        source: TransactionSource.manual,
+        date: _selectedDate,
+        createdAt: DateTime.now(),
+      );
+
+      await _transactionService.addTransaction(transaction);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Expense added successfully!')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
 
   @override
   void initState() {
@@ -763,11 +804,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ElevatedButton.icon(
-                onPressed: _isAmountValid
-                    ? () {
-                        // Form submission logic
-                      }
-                    : null,
+                onPressed: _isAmountValid ? _saveExpense : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorPrimaryContainer,
                   foregroundColor: Colors.white,
