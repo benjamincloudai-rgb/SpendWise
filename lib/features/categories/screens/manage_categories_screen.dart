@@ -57,7 +57,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.lunch_dining,
       iconColor: Colors.orange.shade800,
       backgroundColor: Colors.orange.shade50,
-      transactionCount: 54,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '2',
@@ -65,7 +65,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.local_taxi,
       iconColor: Colors.blue.shade800,
       backgroundColor: Colors.blue.shade50,
-      transactionCount: 32,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '3',
@@ -73,7 +73,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.shopping_cart,
       iconColor: Colors.purple.shade800,
       backgroundColor: Colors.purple.shade50,
-      transactionCount: 18,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '4',
@@ -81,7 +81,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.movie_outlined,
       iconColor: Colors.pink.shade800,
       backgroundColor: Colors.pink.shade50,
-      transactionCount: 22,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '5',
@@ -89,7 +89,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.medical_services_outlined,
       iconColor: Colors.red.shade800,
       backgroundColor: Colors.red.shade50,
-      transactionCount: 8,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '6',
@@ -97,7 +97,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.home_outlined,
       iconColor: Colors.green.shade800,
       backgroundColor: Colors.green.shade50,
-      transactionCount: 12,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '7',
@@ -105,7 +105,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.book_outlined,
       iconColor: Colors.indigo.shade800,
       backgroundColor: Colors.indigo.shade50,
-      transactionCount: 4,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '8',
@@ -113,7 +113,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.flight_outlined,
       iconColor: Colors.teal.shade800,
       backgroundColor: Colors.teal.shade50,
-      transactionCount: 15,
+      transactionCount: 0,
     ),
   ];
 
@@ -124,7 +124,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.account_balance_wallet_outlined,
       iconColor: const Color(0xFF006E2F),
       backgroundColor: const Color(0xFF22C55E).withOpacity(0.15),
-      transactionCount: 12,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '102',
@@ -132,7 +132,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.laptop,
       iconColor: Colors.teal.shade800,
       backgroundColor: Colors.teal.shade50,
-      transactionCount: 24,
+      transactionCount: 0,
     ),
     CategoryModel(
       id: '103',
@@ -140,7 +140,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       icon: Icons.trending_up,
       iconColor: Colors.blue.shade800,
       backgroundColor: Colors.blue.shade50,
-      transactionCount: 6,
+      transactionCount: 0,
     ),
   ];
 
@@ -793,7 +793,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${item.transactionCount} transactions', // Reduced visual emphasis light grey count
+                    item.transactionCount == 0
+                        ? 'No transactions'
+                        : item.transactionCount == 1
+                        ? '1 transaction'
+                        : '${item.transactionCount} transactions', // Reduced visual emphasis light grey count
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
