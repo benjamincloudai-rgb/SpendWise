@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/features/settings/screens/settings_screen.dart';
 import 'package:spendwise/features/categories/screens/manage_categories_screen.dart';
+import 'package:spendwise/features/profile/screens/notifications_screen.dart';
+import 'package:spendwise/features/profile/screens/help_centre_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -179,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: colorPrimary,
+                  color: colorSecondary,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -521,7 +523,15 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildDivider(),
               _buildSettingsRow(
                 icon: Icons.notifications_none,
-                title: 'Transaction Notifications',
+                title: 'Notifications',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
@@ -579,7 +589,17 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           child: Column(
             children: [
-              _buildSettingsRow(icon: Icons.help_outline, title: 'Help Center'),
+              _buildSettingsRow(
+                icon: Icons.help_outline, 
+                title: 'Help Center',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpCentreScreen()),
+                  );
+                },
+                
+                ),
               _buildDivider(),
               _buildSettingsRow(icon: Icons.gavel, title: 'Privacy Policy'),
               _buildDivider(),

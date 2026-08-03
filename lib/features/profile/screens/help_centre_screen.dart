@@ -1,0 +1,690 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class HelpCentreScreen extends StatefulWidget {
+  const HelpCentreScreen({super.key});
+
+  @override
+  State<HelpCentreScreen> createState() => _HelpCentreScreenState();
+}
+
+class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProviderStateMixin {
+  late AnimationController _floatController;
+  bool _isLoaded = true; // Set to false to preview the Error Empty State
+
+  // Strict colors matching the SpendWise design system
+  final Color colorPrimary = const Color(0xFF006E2F);
+  final Color colorPrimaryContainer = const Color(0xFF22C55E);
+  final Color colorBackground = const Color(0xFFF9F9F9);
+  final Color colorSurfaceContainerLowest = const Color(0xFFFFFFFF);
+  final Color colorSurfaceContainerLow = const Color(0xFFF3F3F3);
+  final Color colorOnSurfaceVariant = const Color(0xFF3D4A3D);
+  final Color colorOnSurface = const Color(0xFF1A1C1C);
+  final Color colorPrimaryFixed = const Color(0xFF6BFF8F);
+  final Color colorSecondaryFixed = const Color(0xFFDAE2FD);
+  final Color colorOutlineVariant = const Color(0xFFBCCBB9);
+
+  // Secondary, Tertiary, and Outline colors matching specs
+  final Color colorSecondary = const Color(0xFF565E74);
+  final Color colorTertiary = const Color(0xFF505F76);
+  final Color colorOutline = const Color(0xFF6D7B6C);
+
+  @override
+  void initState() {
+    super.initState();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
+
+  // Simulates reloading data
+  void _retryLoading() {
+    setState(() {
+      _isLoaded = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return Scaffold(
+      backgroundColor: colorBackground,
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            // --- Atmospheric Background Blurs (Aligned with other screens) ---
+            Positioned(
+              top: -100,
+              right: -100,
+              child: _BlurBlob(
+                color: colorPrimaryFixed.withOpacity(0.1),
+                size: 500,
+                blur: 100,
+              ),
+            ),
+            Positioned(
+              bottom: -100,
+              left: -100,
+              child: _BlurBlob(
+                color: colorSecondaryFixed.withOpacity(0.2),
+                size: 400,
+                blur: 80,
+              ),
+            ),
+
+            // --- Scrollable Form Content ---
+            Positioned.fill(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.only(
+                  left: screenWidth * 0.05,
+                  right: screenWidth * 0.05,
+                  top: 92, // Clears top sticky App Bar with subtitle spacing
+                  bottom: 40, // Secure padding at the bottom
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        
+                        // Condition layout showing Empty State or Segmented Cards
+                        !_isLoaded
+                            ? _EntranceAnimation(
+                                delayMs: 100,
+                                child: _buildEmptyState(),
+                              )
+                            : Column(
+                                children: [
+                                  _EntranceAnimation(
+                                    delayMs: 100,
+                                    child: _buildQuickHelpSection(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _EntranceAnimation(
+                                    delayMs: 180,
+                                    child: _buildResourcesSection(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _EntranceAnimation(
+                                    delayMs: 240,
+                                    child: _buildCommunitySection(),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _EntranceAnimation(
+                                    delayMs: 300,
+                                    child: _buildContactCard(),
+                                  ),
+                                ],
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // --- Sticky Top App Bar ---
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _EntranceAnimation(
+                delayMs: 50,
+                child: _buildHeader(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Header Component (Sticky Top App Bar with Subtitle)
+  Widget _buildHeader(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return Container(
+      color: colorBackground.withOpacity(0.95),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.05,
+        vertical: 16,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(Icons.arrow_back, color: colorOnSurface, size: 28),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Help Centre',
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black, // Formatted strictly in black
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Find answers, contact support and learn more about SpendWise.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: colorSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Section 1: Quick Help Cards Row
+  Widget _buildQuickHelpSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Quick Help'),
+        Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildSettingsRow(
+                icon: Icons.help_outline,
+                title: 'Frequently Asked Questions',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                icon: Icons.support_agent_outlined,
+                title: 'Contact Support',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                icon: Icons.bug_report_outlined,
+                title: 'Report a Bug',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                icon: Icons.lightbulb_outline,
+                title: 'Request a Feature',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Section 2: Resources List Card (Omit leading icons as requested)
+  Widget _buildResourcesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Resources'),
+        Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildSettingsRow(
+                title: 'User Guide',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Privacy Policy',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Terms & Conditions',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Open Source Licenses',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Section 3: Community List Card
+  Widget _buildCommunitySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Community'),
+        Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildSettingsRow(
+                title: 'Rate SpendWise',
+                trailingWidget: Icon(Icons.star_border, color: colorOutline, size: 20),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Share SpendWise',
+                trailingWidget: Icon(Icons.share_outlined, color: colorOutline, size: 20),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Follow Updates',
+                trailingWidget: Icon(Icons.rss_feed, color: colorOutline, size: 20),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Section 4: Email Support Card Component (Highlighted tint card)
+  Widget _buildContactCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorPrimary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colorPrimary.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: colorPrimaryContainer.withOpacity(0.2), shape: BoxShape.circle),
+            child: Icon(Icons.mail_outlined, color: colorPrimary, size: 24),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Support Email',
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: colorOnSurface),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'support@spendwise.app',
+                style: GoogleFonts.inter(fontSize: 16, color: colorPrimary, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () {
+                  // Copy to Clipboard placeholder
+                },
+                icon: Icon(Icons.copy, color: colorPrimary, size: 16),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                splashRadius: 16,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Usually within 24 hours',
+            style: GoogleFonts.inter(fontSize: 12, color: colorSecondary, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper title row generator for sections
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: colorPrimary,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  // Helper row builder inside cards (Accessibility compliant with 48dp min height)
+  Widget _buildSettingsRow({
+    IconData? icon,
+    required String title,
+    String? suffixText,
+    Widget? trailingWidget,
+    VoidCallback? onTap,
+  }) {
+    return _AnimatedPressCard(
+      onTap: onTap ?? () {},
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorPrimaryContainer.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: colorPrimary, size: 20),
+              ),
+              const SizedBox(width: 16),
+            ],
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: colorOnSurface,
+                ),
+              ),
+            ),
+            if (suffixText != null) ...[
+              Text(
+                suffixText,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: colorSecondary,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            if (trailingWidget != null)
+              trailingWidget
+            else
+              Icon(Icons.chevron_right, color: colorOutlineVariant, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 1,
+      color: colorOutlineVariant.withOpacity(0.2),
+    );
+  }
+
+  // Clean empty state with illustrative trigger action button
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 128,
+            height: 128,
+            decoration: BoxDecoration(
+              color: colorSurfaceContainerLow,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.wifi_off_outlined,
+              size: 56,
+              color: colorOutlineVariant.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Unable to load Help Centre',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: colorOnSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please check your internet connection and try again.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: colorSecondary,
+            ),
+          ),
+          const SizedBox(height: 28),
+          ElevatedButton(
+            onPressed: _retryLoading,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorPrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 2,
+            ),
+            child: Text(
+              'Retry',
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Background blur bubble element
+class _BlurBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+  final double blur;
+
+  const _BlurBlob({
+    required this.color,
+    required this.size,
+    required this.blur,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: blur, spreadRadius: blur / 2),
+        ],
+      ),
+    );
+  }
+}
+
+// Zero-dependency staggered entrance animation widget
+class _EntranceAnimation extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+
+  const _EntranceAnimation({required this.child, this.delayMs = 0});
+
+  @override
+  State<_EntranceAnimation> createState() => _EntranceAnimationState();
+}
+
+class _EntranceAnimationState extends State<_EntranceAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad),
+    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(position: _slideAnimation, child: widget.child),
+    );
+  }
+}
+
+// Custom wrapper to add subtle scale and shadow elevation interactions on press
+class _AnimatedPressCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+
+  const _AnimatedPressCard({required this.child, required this.onTap});
+
+  @override
+  State<_AnimatedPressCard> createState() => _AnimatedPressCardState();
+}
+
+class _AnimatedPressCardState extends State<_AnimatedPressCard> with SingleTickerProviderStateMixin {
+  late AnimationController _pressController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _pressController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _pressController.forward(),
+      onTapUp: (_) => _pressController.reverse(),
+      onTapCancel: () => _pressController.reverse(),
+      onTap: widget.onTap,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: widget.child,
+      ),
+    );
+  }
+}
