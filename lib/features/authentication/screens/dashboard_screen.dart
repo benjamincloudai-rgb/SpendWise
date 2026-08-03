@@ -10,6 +10,8 @@ import 'package:spendwise/features/transactions/screens/transactions_screen.dart
 import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
 import 'package:spendwise/features/profile/screens/profile_screen.dart';
 import 'package:spendwise/features/dashboard/widgets/recent_transactions_widget.dart';
+import 'package:spendwise/models/dashboard_summary_model.dart';
+import 'package:spendwise/services/dashboard_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,13 +21,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Dynamic placeholder variables set to zero as requested
+  final DashboardService _dashboardService = DashboardService();
   String userName = "Loading...";
-
-  double currentBalance = 0;
-  double monthlyIncome = 0;
-  double monthlyExpense = 0;
-  double monthlySavings = 0;
 
   @override
   void initState() {
@@ -132,9 +129,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // --- Sticky Top App Bar ---
             Positioned(top: 0, left: 0, right: 0, child: _buildHeader(context)),
-
-            // --- Bottom Navigation Bar ---
-            
           ],
         ),
       ),
@@ -185,88 +179,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Overview Card Widget
+  // Overview Card Widget (Refactored to cleanly consume DashboardSummaryModel streams)
   Widget _buildOverviewCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorSurfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorSurfaceContainerLow),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Subtle overview card internal blur glow
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: colorPrimary.withOpacity(0.05),
-                shape: BoxShape.circle,
+    return StreamBuilder<DashboardSummaryModel>(
+      stream: _dashboardService.getDashboardSummary(),
+      initialData: DashboardSummaryModel.zero(),
+      builder: (context, snapshot) {
+        final summary = snapshot.data ?? DashboardSummaryModel.zero();
+
+        return Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
               ),
-            ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'CURRENT BALANCE',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: colorSecondary,
-                    letterSpacing: 1.2,
+          child: Stack(
+            children: [
+              // Subtle overview card internal blur glow
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: colorPrimary.withOpacity(0.05),
+                    shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "₹${currentBalance.toStringAsFixed(0)}",
-                  style: GoogleFonts.inter(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w700,
-                    color: colorOnSurface,
-                    letterSpacing: -1,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(height: 1, color: colorSurfaceContainerLow),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildOverviewColumn(
-                      'Income',
-                      "₹${monthlyIncome.toStringAsFixed(0)}",
-                      colorPrimary,
+                    Text(
+                      'CURRENT BALANCE',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorSecondary,
+                        letterSpacing: 1.2,
+                      ),
                     ),
-                    _buildOverviewColumn(
-                      'Expenses',
-                      "₹${monthlyExpense.toStringAsFixed(0)}",
-                      colorError,
+                    const SizedBox(height: 4),
+                    Text(
+                      "₹${summary.currentBalance.toStringAsFixed(0)}",
+                      style: GoogleFonts.inter(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w700,
+                        color: colorOnSurface,
+                        letterSpacing: -1,
+                      ),
                     ),
-                    _buildOverviewColumn(
-                      'Savings',
-                      "₹${monthlySavings.toStringAsFixed(0)}",
-                      colorTertiary,
+                    const SizedBox(height: 20),
+                    Container(height: 1, color: colorSurfaceContainerLow),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildOverviewColumn(
+                          'Income',
+                          "₹${summary.totalIncome.toStringAsFixed(0)}",
+                          colorPrimary,
+                        ),
+                        _buildOverviewColumn(
+                          'Expenses',
+                          "₹${summary.totalExpense.toStringAsFixed(0)}",
+                          colorError,
+                        ),
+                        _buildOverviewColumn(
+                          'Savings',
+                          "₹${summary.savings.toStringAsFixed(0)}",
+                          colorTertiary,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -353,7 +355,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           },
         ),
-        
       ],
     );
   }
@@ -501,126 +502,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
-  // Recent Transactions Section (Configured with Only Empty State)
-  Widget _buildRecentTransactionsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Recent Transactions',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorOnSurface,
-              ),
-            ),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                'View All',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colorPrimary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: colorSurfaceContainerLowest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorSurfaceContainerLow),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: colorSurfaceContainerLow,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.receipt_long,
-                  size: 48,
-                  color: colorOutlineVariant.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No transactions yet',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: colorOnSurface,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Start by adding your first expense.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 14, color: colorSecondary),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorPrimary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                icon: const Icon(Icons.add, size: 20),
-                label: Text(
-                  'Add Expense',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Sticky Bottom Navigation Bar (Configured with Only 4 Items & Symmetrical Linear Fade Routing)
-  
-
 }
 
 // Background blur bubble element

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:spendwise/models/transaction_model.dart';
+import 'package:spendwise/services/transaction_service.dart';
 
 class AddIncomeScreen extends StatefulWidget {
   const AddIncomeScreen({super.key});
@@ -13,13 +16,15 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
   late AnimationController _floatController;
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final TransactionService _transactionService = TransactionService();
 
   // Selected state variables
-  String _selectedSource = 'Salary';
-  String _selectedRepeat = 'One Time';
+  String _selectedCategory = '💼 Salary';
+  IconData _selectedCategoryIcon = Icons.account_balance_wallet_outlined;
   DateTime _selectedDate = DateTime.now();
+  String _selectedRepeat = 'One Time'; // Local UI state variable
 
-  // Theme colors consistent with the SpendWise design system
+  // Theme colors consistent with the SpendWise dashboard
   final Color colorPrimary = const Color(0xFF006E2F);
   final Color colorPrimaryContainer = const Color(0xFF22C55E);
   final Color colorBackground = const Color(0xFFF9F9F9);
@@ -36,19 +41,74 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
   final Color colorTertiary = const Color(0xFF505F76);
   final Color colorOutline = const Color(0xFF6D7B6C);
 
-  // Income Sources predefined structure
-  final List<String> _sources = [
-    'Salary',
-    'Freelance',
-    'Business',
-    'Investments',
-    'Interest',
-    'Bonus',
-    'Rental Income',
-    'Gift',
-    'Cashback',
-    'Refund',
+  // Income categories list mapped with Material Icons and custom colors
+  final List<_CategoryItem> _categories = [
+    _CategoryItem(
+      '💼 Salary',
+      Icons.account_balance_wallet_outlined,
+      color: Colors.green,
+    ),
+    _CategoryItem('💻 Freelance', Icons.laptop, color: Colors.teal),
+    _CategoryItem('🏪 Business', Icons.storefront, color: Colors.amber),
+    _CategoryItem(
+      '📈 Investments',
+      Icons.trending_up,
+      color: Colors.lightGreen,
+    ),
+    _CategoryItem('🧮 Interest', Icons.percent, color: Colors.blueGrey),
+    _CategoryItem('🎁 Bonus', Icons.card_giftcard, color: Colors.pink),
+    _CategoryItem(
+      '🏠 Rental Income',
+      Icons.home_outlined,
+      color: Colors.indigo,
+    ),
+    _CategoryItem(
+      '🎨 Gift',
+      Icons.featured_play_list_outlined,
+      color: Colors.purple,
+    ),
+    _CategoryItem(
+      '🐷 Cashback',
+      Icons.savings_outlined,
+      color: Colors.deepOrange,
+    ),
+    _CategoryItem('↩ Refund', Icons.replay, color: Colors.red),
   ];
+
+  Future<void> _saveIncome() async {
+    try {
+      final amount = double.parse(_amountController.text.trim());
+
+      final transaction = TransactionModel(
+        id: '',
+        amount: amount,
+        categoryId: _selectedCategory,
+        note: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        type: TransactionType.income, // Strictly set to Income type
+        source: TransactionSource.manual,
+        date: _selectedDate,
+        createdAt: DateTime.now(),
+      );
+
+      await _transactionService.addTransaction(transaction);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Income added successfully!')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
 
   @override
   void initState() {
@@ -74,32 +134,14 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
   }
 
   // Helper validation computed getter
-  bool get _isFormValid {
+  bool get _isAmountValid {
     final text = _amountController.text.trim();
     if (text.isEmpty) return false;
     final amount = double.tryParse(text);
-    return amount != null && amount > 0 && _selectedSource.isNotEmpty;
+    return amount != null && amount > 0;
   }
 
-  // Returns exact icon representing current selected source
-  IconData _getSourceIcon(String source) {
-    final normalized = source.toLowerCase().trim();
-    if (normalized.contains('salary'))
-      return Icons.account_balance_wallet_outlined;
-    if (normalized.contains('freelance')) return Icons.laptop;
-    if (normalized.contains('business')) return Icons.storefront;
-    if (normalized.contains('investment')) return Icons.trending_up;
-    if (normalized.contains('interest')) return Icons.percent;
-    if (normalized.contains('bonus'))
-      return Icons.card_giftcard; // Matches promotional reward design
-    if (normalized.contains('rental')) return Icons.home_outlined;
-    if (normalized.contains('gift')) return Icons.featured_play_list_outlined;
-    if (normalized.contains('cashback')) return Icons.savings_outlined;
-    if (normalized.contains('refund')) return Icons.replay;
-    return Icons.attach_money;
-  }
-
-  // Dynamic system Month/Day/Year Date evaluators
+  // Evaluates display date name dynamically
   String _getFormattedDate() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -133,7 +175,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     }
   }
 
-  // Opens Flutter date picker overlay
+  // Opens the system date picker dialog
   Future<void> _showDatePicker() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -164,8 +206,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     }
   }
 
-  // Dialog window triggering custom source input field
-  void _showCustomSourceDialog() {
+  // Opens custom category dialog when "Other..." is tapped
+  void _showCustomCategoryDialog() {
     final textController = TextEditingController();
     showDialog(
       context: context,
@@ -176,7 +218,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
-            'Custom Source',
+            'Custom Category',
             style: GoogleFonts.inter(
               fontWeight: FontWeight.bold,
               color: colorOnSurface,
@@ -186,7 +228,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
             controller: textController,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Enter income source',
+              hintText: 'Enter category name',
               hintStyle: GoogleFonts.inter(color: colorTertiary),
               filled: true,
               fillColor: colorSurfaceContainerLow,
@@ -207,10 +249,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
             ),
             TextButton(
               onPressed: () {
-                final customSource = textController.text.trim();
-                if (customSource.isNotEmpty) {
+                final customName = textController.text.trim();
+                if (customName.isNotEmpty) {
                   setState(() {
-                    _selectedSource = customSource;
+                    _selectedCategory = '➕ $customName';
+                    _selectedCategoryIcon = Icons.category_outlined;
                   });
                 }
                 Navigator.pop(context);
@@ -229,8 +272,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     );
   }
 
-  // Modal selector window for choosing income source
-  void _showSourcePicker() {
+  // Opens category modal sheet selector
+  void _showCategoryPicker() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -258,7 +301,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Income Source',
+                  'Select Category',
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -270,9 +313,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                   child: ListView.builder(
                     controller: scrollController,
                     physics: const BouncingScrollPhysics(),
-                    itemCount: _sources.length + 1,
+                    itemCount: _categories.length + 1,
                     itemBuilder: (context, index) {
-                      if (index == _sources.length) {
+                      if (index == _categories.length) {
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -301,12 +344,12 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                           ),
                           onTap: () {
                             Navigator.pop(context);
-                            _showCustomSourceDialog();
+                            _showCustomCategoryDialog();
                           },
                         );
                       }
 
-                      final source = _sources[index];
+                      final category = _categories[index];
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -316,17 +359,19 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: colorPrimary.withOpacity(0.1),
+                            color: (category.color ?? colorPrimary).withOpacity(
+                              0.1,
+                            ),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            _getSourceIcon(source),
-                            color: colorPrimary,
+                            category.icon,
+                            color: category.color ?? colorPrimary,
                             size: 20,
                           ),
                         ),
                         title: Text(
-                          source,
+                          category.name,
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -335,7 +380,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                         ),
                         onTap: () {
                           setState(() {
-                            _selectedSource = source;
+                            _selectedCategory = category.name;
+                            _selectedCategoryIcon = category.icon;
                           });
                           Navigator.pop(context);
                         },
@@ -362,7 +408,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
         bottom: false,
         child: Stack(
           children: [
-            // --- Subtle Atmospheric Background Blurs (Exact match to Dashboard/Add Expense) ---
+            // --- Subtle Atmospheric Background Blurs (Exact match to Dashboard) ---
             Positioned(
               top: -100,
               right: -100,
@@ -406,10 +452,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
 
                         SizedBox(height: screenHeight * 0.04),
 
-                        // Animated field cards (matching layout & spacing)
+                        // Animated card entries
                         _EntranceAnimation(
                           delayMs: 250,
-                          child: _buildSourceSelector(),
+                          child: _buildCategorySelector(),
                         ),
                         const SizedBox(height: 16),
                         _EntranceAnimation(
@@ -483,7 +529,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
               ),
               const SizedBox(width: 16),
               Text(
-                'Add Income',
+                'Add Income', // Styled exactly like Add Expense with correct label
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -503,7 +549,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     return Column(
       children: [
         Text(
-          'TOTAL INCOME',
+          'TOTAL INCOME', // Labeled correctly for income context
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -553,14 +599,14 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     );
   }
 
-  // Income Source Card
-  Widget _buildSourceSelector() {
+  // Category Selector Card
+  Widget _buildCategorySelector() {
     return Material(
       color: colorSurfaceContainerLowest,
       borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: _showSourcePicker,
+        onTap: _showCategoryPicker,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -580,7 +626,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      _getSourceIcon(_selectedSource),
+                      _selectedCategoryIcon,
                       color: colorPrimary,
                       size: 24,
                     ),
@@ -590,7 +636,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Income Source',
+                        'Category',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -599,7 +645,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _selectedSource,
+                        _selectedCategory,
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -683,7 +729,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     );
   }
 
-  // Repeat Interval Segment Selector Card
+  // Repeat Selector Segmented Control (Presents modern options from HTML layout)
   Widget _buildRepeatSelector() {
     final options = ['One Time', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'];
 
@@ -774,7 +820,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     );
   }
 
-  // Notes Input Card
+  // Notes Card
   Widget _buildNotesInput() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -855,11 +901,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ElevatedButton.icon(
-                onPressed: _isFormValid
-                    ? () {
-                        // Form submission logic triggers
-                      }
-                    : null,
+                onPressed: _isAmountValid ? _saveIncome : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorPrimaryContainer,
                   foregroundColor: Colors.white,
@@ -876,7 +918,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                 ),
                 icon: const Icon(Icons.check_circle, size: 24),
                 label: Text(
-                  'Save Income',
+                  'Save Income', // Labeled correctly for income context
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -986,7 +1028,7 @@ class _EntranceAnimationState extends State<_EntranceAnimation>
   }
 }
 
-// Private model structure mapping individual source items
+// Category Item internal mapping configuration class
 class _CategoryItem {
   final String name;
   final IconData icon;
