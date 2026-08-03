@@ -35,6 +35,30 @@ class TransactionService {
     }
   }
 
+  // --- NEW: Update existing Firestore transaction document ---
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    try {
+      // Targets the existing document by its ID and overwrites with updated properties
+      await _transactionCollection.doc(transaction.id).set(transaction.toMap());
+    } on FirebaseException catch (e) {
+      throw Exception('Failed to update transaction: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  // --- NEW: Delete existing Firestore transaction document ---
+  Future<void> deleteTransaction(String id) async {
+    try {
+      // Targets the document by its ID and deletes it asynchronously
+      await _transactionCollection.doc(id).delete();
+    } on FirebaseException catch (e) {
+      throw Exception('Failed to delete transaction: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
   Stream<List<TransactionModel>> getTransactions() {
     return _transactionCollection
         .orderBy('date', descending: true)

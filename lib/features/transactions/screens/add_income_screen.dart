@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
 
 class AddIncomeScreen extends StatefulWidget {
-  const AddIncomeScreen({super.key});
+  final TransactionModel?
+  transaction; // Optional transaction parameter for editing
+
+  const AddIncomeScreen({super.key, this.transaction});
 
   @override
   State<AddIncomeScreen> createState() => _AddIncomeScreenState();
@@ -78,26 +80,43 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
   Future<void> _saveIncome() async {
     try {
       final amount = double.parse(_amountController.text.trim());
+      final bool isEditing = widget.transaction != null;
 
       final transaction = TransactionModel(
-        id: '',
+        id: isEditing
+            ? widget.transaction!.id
+            : '', // Preserves original id when updating
         amount: amount,
         categoryId: _selectedCategory,
         note: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
-        type: TransactionType.income, // Strictly set to Income type
-        source: TransactionSource.manual,
+        type: TransactionType.income,
+        source: isEditing
+            ? widget.transaction!.source
+            : TransactionSource.manual,
         date: _selectedDate,
-        createdAt: DateTime.now(),
+        createdAt: isEditing
+            ? widget.transaction!.createdAt
+            : DateTime.now(), // Preserves original createdAt
       );
 
-      await _transactionService.addTransaction(transaction);
+      if (isEditing) {
+        await _transactionService.updateTransaction(transaction);
+      } else {
+        await _transactionService.addTransaction(transaction);
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Income added successfully!')),
+        SnackBar(
+          content: Text(
+            isEditing
+                ? 'Income updated successfully!'
+                : 'Income added successfully!',
+          ),
+        ),
       );
 
       Navigator.pop(context);
@@ -117,6 +136,25 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
+
+    // If editing, pre-fill form properties from existing transaction
+    if (widget.transaction != null) {
+      final tx = widget.transaction!;
+      _amountController.text = tx.amount % 1 == 0
+          ? tx.amount.toStringAsFixed(0)
+          : tx.amount.toString();
+      _notesController.text = tx.note ?? '';
+      _selectedCategory = tx.categoryId;
+      _selectedDate = tx.date;
+
+      // Find the corresponding custom category icon dynamically
+      final matchedItem = _categories.firstWhere(
+        (cat) => cat.name == _selectedCategory,
+        orElse: () =>
+            _CategoryItem('💼 Salary', Icons.account_balance_wallet_outlined),
+      );
+      _selectedCategoryIcon = matchedItem.icon;
+    }
 
     _amountController.addListener(_onAmountChanged);
   }
@@ -496,7 +534,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
               right: 0,
               bottom: 0,
               child: _EntranceAnimation(
-                delayMs: 500,
+                delayMs: 440,
                 child: _buildBottomActions(context),
               ),
             ),
@@ -529,7 +567,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
               ),
               const SizedBox(width: 16),
               Text(
-                'Add Income', // Styled exactly like Add Expense with correct label
+                widget.transaction != null
+                    ? 'Edit Income'
+                    : 'Add Income', // Dynamic Header title
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -549,7 +589,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     return Column(
       children: [
         Text(
-          'TOTAL INCOME', // Labeled correctly for income context
+          'TOTAL INCOME',
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -918,7 +958,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                 ),
                 icon: const Icon(Icons.check_circle, size: 24),
                 label: Text(
-                  'Save Income', // Labeled correctly for income context
+                  widget.transaction != null
+                      ? 'Update Income'
+                      : 'Save Income', // Dynamic button text
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,

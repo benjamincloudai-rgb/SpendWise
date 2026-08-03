@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
+import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
+import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -43,8 +45,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   @override
   void initState() {
     super.initState();
-
     _transactionsStream = _transactionService.getTransactions();
+
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
@@ -81,7 +83,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     return _totalIncome - _totalExpenses;
   }
 
-  // Reactive computed transaction filters
+  // Reactive computed transaction filters (Excludes obsolete Transfers filter)
   List<TransactionModel> get _filteredTransactions {
     return _allTransactions.where((tx) {
       if (_selectedFilter == 'Expenses' && tx.type != TransactionType.expense) {
@@ -136,6 +138,83 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     return valueString.replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},',
+    );
+  }
+
+  // Formats DateTime value into AM/PM string formats
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute;
+    final amPm = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    final displayMinute = minute < 10 ? '0$minute' : '$minute';
+    return "$displayHour:$displayMinute $amPm";
+  }
+
+  // Confirmation dialog before asynchronous document deletion
+  void _showDeleteConfirmationDialog(
+    BuildContext context,
+    TransactionModel tx,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: colorSurfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Text(
+            'Delete Transaction',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold,
+              color: colorOnSurface,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete this transaction of ₹${_formatAmount(tx.amount)}?',
+            style: GoogleFonts.inter(color: colorSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.inter(
+                  color: colorSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context); // Close dialog
+                try {
+                  await _transactionService.deleteTransaction(tx.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaction deleted successfully!'),
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
+                }
+              },
+              child: Text(
+                'Delete',
+                style: GoogleFonts.inter(
+                  color: colorError,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -216,20 +295,35 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 16),
-                            _buildSummaryCard(),
+                            _EntranceAnimation(
+                              delayMs: 100,
+                              child: _buildSummaryCard(),
+                            ),
                             const SizedBox(height: 24),
-                            _buildSearchBar(),
+                            _EntranceAnimation(
+                              delayMs: 180,
+                              child: _buildSearchBar(),
+                            ),
                             const SizedBox(height: 20),
-                            _buildFilterChips(),
+                            _EntranceAnimation(
+                              delayMs: 240,
+                              child: _buildFilterChips(),
+                            ),
                             const SizedBox(height: 24),
                             filteredList.isEmpty
-                                ? _buildEmptyState()
+                                ? _EntranceAnimation(
+                                    delayMs: 300,
+                                    child: _buildEmptyState(),
+                                  )
                                 : Column(
                                     children: groupedMap.keys.map((groupTitle) {
-                                      return _buildTransactionGroup(
+                                      return _EntranceAnimation(
+                                        delayMs: 300,
+                                        child: _buildTransactionGroup(
                                           groupTitle,
                                           groupedMap[groupTitle]!,
-                                        );
+                                        ),
+                                      );
                                     }).toList(),
                                   ),
                           ],
@@ -253,6 +347,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
 
             // --- Fixed Bottom Navigation Bar ---
+            
           ],
         ),
       ),
@@ -279,11 +374,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: colorOnSurface,
-                      size: 28,
-                    ),
+                    icon: Icon(Icons.arrow_back, color: colorPrimary, size: 28),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                   ),
@@ -476,7 +567,11 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   // Filters Selection Pill Chips Row
   Widget _buildFilterChips() {
-    final filters = ['All', 'Expenses', 'Income', 'Transfers'];
+    final filters = [
+      'All',
+      'Expenses',
+      'Income',
+    ]; // Excludes obsolete Transfers filter
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -563,13 +658,16 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  // Individual Transaction Card
+  // Individual Transaction Card (Redesigned with Inkwell tap routing & long-press delete confirmations)
   Widget _buildTransactionCard(TransactionModel tx) {
-    final style = _getCategoryStyle(tx.categoryId, tx.type);
+    final style = _getCategoryStyle(
+      tx.categoryId,
+      tx.type,
+    ); // Maps exactly to categoryId
     final isExpense = tx.type == TransactionType.expense;
     final isIncome = tx.type == TransactionType.income;
 
-    Color amountColor = Colors.blue.shade700; // default for transfers
+    Color amountColor = Colors.blue.shade700;
     String prefix = '';
     if (isExpense) {
       amountColor = colorError;
@@ -579,65 +677,103 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       prefix = '+ ';
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorSurfaceContainerLowest,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: style.backgroundColor,
-              shape: BoxShape.circle,
+        onTap: () {
+          // Binds active transaction and routes symmetrically
+          final Widget targetScreen = isExpense
+              ? AddExpenseScreen(transaction: tx)
+              : AddIncomeScreen(transaction: tx);
+
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  targetScreen,
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves
+                              .linear, // Symmetric linear fade transitions
+                        ),
+                      ),
+                      child: child,
+                    );
+                  },
+              transitionDuration: const Duration(milliseconds: 200),
+              reverseTransitionDuration: const Duration(milliseconds: 200),
             ),
-            child: Icon(style.icon, color: style.iconColor, size: 22),
+          );
+        },
+        onLongPress: () =>
+            _showDeleteConfirmationDialog(context, tx), // Deletion Dialog
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tx.categoryId,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colorOnSurface,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: style.backgroundColor,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "${tx.date}${tx.note != null ? ' • ${tx.note}' : ''}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: colorOnSurfaceVariant,
-                  ),
+                child: Icon(style.icon, color: style.iconColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tx.categoryId, // Maps exactly to categoryId
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: colorOnSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "${_formatTime(tx.date)}${tx.note != null ? ' • ${tx.note}' : ''}", // Maps exactly to date formatter
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: colorOnSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                "$prefix₹${_formatAmount(tx.amount)}",
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: amountColor,
+                ),
+              ),
+            ],
           ),
-          Text(
-            "$prefix₹${_formatAmount(tx.amount)}",
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: amountColor,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -683,6 +819,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   // Sticky Bottom Navigation Bar (Copied exactly from Dashboard and swapped active tab)
+  
 
   // Style mapper for category circle structures
   _CategoryStyle _getCategoryStyle(String category, TransactionType type) {

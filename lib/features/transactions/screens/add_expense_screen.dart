@@ -5,9 +5,10 @@ import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  final TransactionModel?
+  transaction; // Optional transaction parameter for editing
 
-  
+  const AddExpenseScreen({super.key, this.transaction});
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -77,26 +78,43 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   Future<void> _saveExpense() async {
     try {
       final amount = double.parse(_amountController.text.trim());
+      final bool isEditing = widget.transaction != null;
 
       final transaction = TransactionModel(
-        id: '',
+        id: isEditing
+            ? widget.transaction!.id
+            : '', // Preserves original id when updating
         amount: amount,
         categoryId: _selectedCategory,
         note: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
         type: TransactionType.expense,
-        source: TransactionSource.manual,
+        source: isEditing
+            ? widget.transaction!.source
+            : TransactionSource.manual,
         date: _selectedDate,
-        createdAt: DateTime.now(),
+        createdAt: isEditing
+            ? widget.transaction!.createdAt
+            : DateTime.now(), // Preserves original createdAt
       );
 
-      await _transactionService.addTransaction(transaction);
+      if (isEditing) {
+        await _transactionService.updateTransaction(transaction);
+      } else {
+        await _transactionService.addTransaction(transaction);
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Expense added successfully!')),
+        SnackBar(
+          content: Text(
+            isEditing
+                ? 'Expense updated successfully!'
+                : 'Expense added successfully!',
+          ),
+        ),
       );
 
       Navigator.pop(context);
@@ -116,6 +134,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
+
+    // If editing, pre-fill form properties from existing transaction
+    if (widget.transaction != null) {
+      final tx = widget.transaction!;
+      _amountController.text = tx.amount % 1 == 0
+          ? tx.amount.toStringAsFixed(0)
+          : tx.amount.toString();
+      _notesController.text = tx.note ?? '';
+      _selectedCategory = tx.categoryId;
+      _selectedDate = tx.date;
+
+      // Find the corresponding custom category icon dynamically
+      final matchedItem = _categories.firstWhere(
+        (cat) => cat.name == _selectedCategory,
+        orElse: () => _CategoryItem('🛒 Shopping', Icons.shopping_bag),
+      );
+      _selectedCategoryIcon = matchedItem.icon;
+    }
 
     _amountController.addListener(_onAmountChanged);
   }
@@ -523,7 +559,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
               ),
               const SizedBox(width: 16),
               Text(
-                'Add Expense',
+                widget.transaction != null
+                    ? 'Edit Expense'
+                    : 'Add Expense', // Dynamic Header title
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -821,7 +859,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
                 ),
                 icon: const Icon(Icons.check_circle, size: 24),
                 label: Text(
-                  'Save Expense',
+                  widget.transaction != null
+                      ? 'Update Expense'
+                      : 'Save Expense', // Dynamic button text
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,

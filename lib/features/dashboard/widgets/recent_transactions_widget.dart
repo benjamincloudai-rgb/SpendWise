@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
+import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
+import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
 
 class RecentTransactionsWidget extends StatelessWidget {
   RecentTransactionsWidget({super.key});
@@ -150,70 +152,109 @@ class RecentTransactionsWidget extends StatelessWidget {
                 final style = _getCategoryStyle(tx.categoryId, tx.type);
                 final isExpense = tx.type == TransactionType.expense;
 
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colorSurfaceContainerLowest,
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: colorSurfaceContainerLow),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: style.backgroundColor,
-                          shape: BoxShape.circle,
+                    onTap: () {
+                      // Determines appropriate editing form
+                      final Widget targetScreen = isExpense
+                          ? AddExpenseScreen(transaction: tx)
+                          : AddIncomeScreen(transaction: tx);
+
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  targetScreen,
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                      .animate(
+                                        CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves
+                                              .linear, // Symmetric 200ms fade transition
+                                        ),
+                                      ),
+                                  child: child,
+                                );
+                              },
+                          transitionDuration: const Duration(milliseconds: 200),
+                          reverseTransitionDuration: const Duration(
+                            milliseconds: 200,
+                          ),
                         ),
-                        child: Icon(
-                          style.icon,
-                          color: style.iconColor,
-                          size: 22,
-                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorSurfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: colorSurfaceContainerLow),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tx.categoryId,
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: colorOnSurface,
-                              ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: style.backgroundColor,
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              tx.note ?? "No note",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: colorOnSurfaceVariant,
-                              ),
+                            child: Icon(
+                              style.icon,
+                              color: style.iconColor,
+                              size: 22,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tx.categoryId,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorOnSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  tx.note ?? "No note",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: colorOnSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            "${isExpense ? '- ' : '+ '}₹${_formatAmount(tx.amount)}",
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isExpense ? colorError : colorPrimary,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        "${isExpense ? '- ' : '+ '}₹${_formatAmount(tx.amount)}",
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isExpense ? colorError : colorPrimary,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 );
               },
