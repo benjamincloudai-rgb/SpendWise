@@ -1,28 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// --- TRANSACTION DATA MODEL ---
-enum TransactionType { expense, income, transfer }
-
-class TransactionModel {
-  final String id;
-  final String category;
-  final String? note;
-  final double amount;
-  final DateTime date;
-  final String time;
-  final TransactionType type;
-
-  TransactionModel({
-    required this.id,
-    required this.category,
-    this.note,
-    required this.amount,
-    required this.date,
-    required this.time,
-    required this.type,
-  });
-}
+import 'package:spendwise/models/transaction_model.dart';
+import 'package:spendwise/services/transaction_service.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -35,6 +14,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
   final TextEditingController _searchController = TextEditingController();
+  final TransactionService _transactionService = TransactionService();
   String _selectedFilter = 'All';
 
   // Strict colors matching the SpendWise design system
@@ -56,8 +36,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   final Color colorError = const Color(0xFFBA1A1A);
   final Color colorErrorContainer = const Color(0xFFFFDAD6);
 
-  // Mock list of transactions prepared for future Firestore synchronization
-  final List<TransactionModel> _allTransactions = [];
+  // Dynamically populated via Firestore snapshots stream
+  List<TransactionModel> _allTransactions = [];
 
   @override
   void initState() {
@@ -107,14 +87,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       if (_selectedFilter == 'Income' && tx.type != TransactionType.income) {
         return false;
       }
-      if (_selectedFilter == 'Transfers' &&
-          tx.type != TransactionType.transfer) {
-        return false;
-      }
 
       final query = _searchController.text.trim().toLowerCase();
       if (query.isNotEmpty) {
-        final categoryMatch = tx.category.toLowerCase().contains(query);
+        final categoryMatch = tx.categoryId.toLowerCase().contains(query);
         final noteMatch = tx.note?.toLowerCase().contains(query) ?? false;
         final amountMatch = tx.amount.toString().contains(query);
         return categoryMatch || noteMatch || amountMatch;
@@ -163,8 +139,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final filteredList = _filteredTransactions;
-    final groupedMap = _groupTransactions(filteredList);
 
     return Scaffold(
       backgroundColor: colorBackground,
@@ -192,58 +166,90 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               ),
             ),
 
-            // --- Scrollable main view body ---
+            // --- Scrollable main view body with StreamBuilder integration ---
             Positioned.fill(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.only(
-                  left: screenWidth * 0.05,
-                  right: screenWidth * 0.05,
-                  top: 76, // Clears top header App Bar
-                  bottom: 120, // Clears bottom navigation bar securely
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        _EntranceAnimation(
-                          delayMs: 100,
-                          child: _buildSummaryCard(),
+              child: StreamBuilder<List<TransactionModel>>(
+                stream: _transactionService.getTransactions(),
+                builder: (context, snapshot) {
+                  // Loading State
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF006E2F),
+                      ),
+                    );
+                  }
+
+                  // Error State
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        style: TextStyle(
+                          color: colorError,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 24),
-                        _EntranceAnimation(
-                          delayMs: 180,
-                          child: _buildSearchBar(),
-                        ),
-                        const SizedBox(height: 20),
-                        _EntranceAnimation(
-                          delayMs: 240,
-                          child: _buildFilterChips(),
-                        ),
-                        const SizedBox(height: 24),
-                        filteredList.isEmpty
-                            ? _EntranceAnimation(
-                                delayMs: 300,
-                                child: _buildEmptyState(),
-                              )
-                            : Column(
-                                children: groupedMap.keys.map((groupTitle) {
-                                  return _EntranceAnimation(
-                                    delayMs: 300,
-                                    child: _buildTransactionGroup(
-                                      groupTitle,
-                                      groupedMap[groupTitle]!,
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                      ],
+                      ),
+                    );
+                  }
+
+                  // Data Extraction
+                  _allTransactions = snapshot.data ?? [];
+                  final filteredList = _filteredTransactions;
+                  final groupedMap = _groupTransactions(filteredList);
+
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      right: screenWidth * 0.05,
+                      top: 76, // Clears top header App Bar
+                      bottom: 120, // Clears bottom navigation bar securely
                     ),
-                  ),
-                ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+                            _EntranceAnimation(
+                              delayMs: 100,
+                              child: _buildSummaryCard(),
+                            ),
+                            const SizedBox(height: 24),
+                            _EntranceAnimation(
+                              delayMs: 180,
+                              child: _buildSearchBar(),
+                            ),
+                            const SizedBox(height: 20),
+                            _EntranceAnimation(
+                              delayMs: 240,
+                              child: _buildFilterChips(),
+                            ),
+                            const SizedBox(height: 24),
+                            filteredList.isEmpty
+                                ? _EntranceAnimation(
+                                    delayMs: 300,
+                                    child: _buildEmptyState(),
+                                  )
+                                : Column(
+                                    children: groupedMap.keys.map((groupTitle) {
+                                      return _EntranceAnimation(
+                                        delayMs: 300,
+                                        child: _buildTransactionGroup(
+                                          groupTitle,
+                                          groupedMap[groupTitle]!,
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
 
@@ -259,7 +265,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
 
             // --- Fixed Bottom Navigation Bar ---
-            
           ],
         ),
       ),
@@ -286,7 +291,11 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: colorPrimary, size: 28),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: colorOnSurface,
+                      size: 28,
+                    ),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                   ),
@@ -568,7 +577,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   // Individual Transaction Card
   Widget _buildTransactionCard(TransactionModel tx) {
-    final style = _getCategoryStyle(tx.category, tx.type);
+    final style = _getCategoryStyle(tx.categoryId, tx.type);
     final isExpense = tx.type == TransactionType.expense;
     final isIncome = tx.type == TransactionType.income;
 
@@ -612,7 +621,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tx.category,
+                  tx.categoryId,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -621,7 +630,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "${tx.time}${tx.note != null ? ' • ${tx.note}' : ''}",
+                  "${tx.date}${tx.note != null ? ' • ${tx.note}' : ''}",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
@@ -686,7 +695,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   // Sticky Bottom Navigation Bar (Copied exactly from Dashboard and swapped active tab)
-  
 
   // Style mapper for category circle structures
   _CategoryStyle _getCategoryStyle(String category, TransactionType type) {
