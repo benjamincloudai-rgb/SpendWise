@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/features/settings/screens/settings_screen.dart';
+import 'package:spendwise/features/categories/screens/manage_categories_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -415,6 +416,32 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.category_outlined,
                 title: 'Manage Categories',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          const ManageCategoriesScreen(),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                  .animate(
+                                    CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.linear,
+                                    ),
+                                  ),
+                              child: child,
+                            );
+                          },
+                      transitionDuration: const Duration(milliseconds: 200),
+                      reverseTransitionDuration: const Duration(
+                        milliseconds: 200,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
