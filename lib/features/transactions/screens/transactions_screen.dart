@@ -15,6 +15,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   late AnimationController _floatController;
   final TextEditingController _searchController = TextEditingController();
   final TransactionService _transactionService = TransactionService();
+  late final Stream<List<TransactionModel>> _transactionsStream;
   String _selectedFilter = 'All';
 
   // Strict colors matching the SpendWise design system
@@ -42,6 +43,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   @override
   void initState() {
     super.initState();
+
+    _transactionsStream = _transactionService.getTransactions();
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
@@ -169,7 +172,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             // --- Scrollable main view body with StreamBuilder integration ---
             Positioned.fill(
               child: StreamBuilder<List<TransactionModel>>(
-                stream: _transactionService.getTransactions(),
+                stream: _transactionsStream,
                 builder: (context, snapshot) {
                   // Loading State
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -213,35 +216,20 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 16),
-                            _EntranceAnimation(
-                              delayMs: 100,
-                              child: _buildSummaryCard(),
-                            ),
+                            _buildSummaryCard(),
                             const SizedBox(height: 24),
-                            _EntranceAnimation(
-                              delayMs: 180,
-                              child: _buildSearchBar(),
-                            ),
+                            _buildSearchBar(),
                             const SizedBox(height: 20),
-                            _EntranceAnimation(
-                              delayMs: 240,
-                              child: _buildFilterChips(),
-                            ),
+                            _buildFilterChips(),
                             const SizedBox(height: 24),
                             filteredList.isEmpty
-                                ? _EntranceAnimation(
-                                    delayMs: 300,
-                                    child: _buildEmptyState(),
-                                  )
+                                ? _buildEmptyState()
                                 : Column(
                                     children: groupedMap.keys.map((groupTitle) {
-                                      return _EntranceAnimation(
-                                        delayMs: 300,
-                                        child: _buildTransactionGroup(
+                                      return _buildTransactionGroup(
                                           groupTitle,
                                           groupedMap[groupTitle]!,
-                                        ),
-                                      );
+                                        );
                                     }).toList(),
                                   ),
                           ],
