@@ -133,12 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Positioned(top: 0, left: 0, right: 0, child: _buildHeader(context)),
 
             // --- Bottom Navigation Bar ---
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _buildBottomNavigation(context),
-            ),
+            
           ],
         ),
       ),
