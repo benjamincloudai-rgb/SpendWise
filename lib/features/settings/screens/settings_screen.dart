@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/features/settings/screens/settings_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
-
-  static const String userName = 'Benjamin Arockiaraj';
-  static const String userEmail = 'benjamin@email.com';
-  static const String memberSince = 'Member since August 2026';
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class _SettingsScreenState extends State<SettingsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
-  bool _isDarkModeEnabled = false;
+  bool _isBiometricEnabled = true;
 
   // Strict colors matching the SpendWise design system
   final Color colorPrimary = const Color(0xFF006E2F);
@@ -24,6 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   final Color colorBackground = const Color(0xFFF9F9F9);
   final Color colorSurfaceContainerLowest = const Color(0xFFFFFFFF);
   final Color colorSurfaceContainerLow = const Color(0xFFF3F3F3);
+  final Color colorSurfaceContainer = const Color(0xFFEEEEEE);
   final Color colorOnSurfaceVariant = const Color(0xFF3D4A3D);
   final Color colorOnSurface = const Color(0xFF1A1C1C);
   final Color colorPrimaryFixed = const Color(0xFF6BFF8F);
@@ -33,8 +29,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   // Secondary, Tertiary, and Error colors matching specs
   final Color colorSecondary = const Color(0xFF565E74);
   final Color colorTertiary = const Color(0xFF505F76);
-  final Color colorOutline = const Color(0xFF6D7B6C);
   final Color colorError = const Color(0xFFBA1A1A);
+  final Color colorErrorContainer = const Color(0xFFFFDAD6);
 
   @override
   void initState() {
@@ -88,46 +84,42 @@ class _ProfileScreenState extends State<ProfileScreen>
                 padding: EdgeInsets.only(
                   left: screenWidth * 0.05,
                   right: screenWidth * 0.05,
-                  top: 76, // Clears top header App Bar
+                  top: 92, // Clears top sticky App Bar with subtitle spacing
                   bottom: 40, // Secure padding at the bottom
                 ),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 16),
                         _EntranceAnimation(
                           delayMs: 100,
-                          child: _buildProfileCard(),
-                        ),
-                        const SizedBox(height: 24),
-                        _EntranceAnimation(
-                          delayMs: 180,
-                          child: _buildFinancialSummary(),
-                        ),
-                        const SizedBox(height: 24),
-                        _EntranceAnimation(
-                          delayMs: 240,
-                          child: _buildAccountSection(),
-                        ),
-                        const SizedBox(height: 24),
-                        _EntranceAnimation(
-                          delayMs: 300,
                           child: _buildPreferencesSection(),
                         ),
                         const SizedBox(height: 24),
                         _EntranceAnimation(
-                          delayMs: 360,
-                          child: _buildSupportSection(),
+                          delayMs: 180,
+                          child: _buildPrivacySection(),
                         ),
                         const SizedBox(height: 24),
                         _EntranceAnimation(
-                          delayMs: 420,
-                          child: _buildLogoutButton(),
+                          delayMs: 240,
+                          child: _buildDataSection(),
+                        ),
+                        const SizedBox(height: 24),
+                        _EntranceAnimation(
+                          delayMs: 300,
+                          child: _buildAboutSection(),
+                        ),
+                        const SizedBox(height: 24),
+                        _EntranceAnimation(
+                          delayMs: 360,
+                          child: _buildDangerZoneSection(),
                         ),
                         const SizedBox(height: 32),
-                        _EntranceAnimation(delayMs: 480, child: _buildFooter()),
+                        _EntranceAnimation(delayMs: 440, child: _buildFooter()),
                       ],
                     ),
                   ),
@@ -151,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Header Component (Sticky Top App Bar)
+  // Header Component (Sticky Top App Bar with Subtitle)
   Widget _buildHeader(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
@@ -173,288 +165,39 @@ class _ProfileScreenState extends State<ProfileScreen>
                 padding: EdgeInsets.zero,
               ),
               const SizedBox(width: 16),
-              Text(
-                'Profile',
-                style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: colorPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Large Rounded Profile Card Widget
-  Widget _buildProfileCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorSurfaceContainerLowest,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorSurfaceContainerLow),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: colorPrimaryContainer, width: 4),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/profile_placeholder.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 1,
-                right: 1,
-                child: Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: colorPrimary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorSurfaceContainerLowest,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(Icons.edit, size: 14, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            ProfileScreen.userName,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colorOnSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                ProfileScreen.userEmail,
-                style: GoogleFonts.inter(fontSize: 14, color: colorSecondary),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.verified, color: colorPrimary, size: 16),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            ProfileScreen.memberSince,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: colorSecondary.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Financial Summary Section Widget
-  Widget _buildFinancialSummary() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: colorSurfaceContainerLowest,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorSurfaceContainerLow),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildSummaryCardColumn(
-            Icons.account_balance_wallet_outlined,
-            'Current Balance',
-            '₹0',
-            colorPrimary,
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: colorOutlineVariant.withOpacity(0.3),
-          ),
-          _buildSummaryCardColumn(
-            Icons.trending_up,
-            'Total Income',
-            '₹0',
-            colorSecondary,
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: colorOutlineVariant.withOpacity(0.3),
-          ),
-          _buildSummaryCardColumn(
-            Icons.trending_down,
-            'Total Expenses',
-            '₹0',
-            colorError,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryCardColumn(
-    IconData icon,
-    String label,
-    String value,
-    Color iconColor,
-  ) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: colorSecondary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: colorOnSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Account Settings Section List
-  Widget _buildAccountSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 8),
-          child: Text(
-            'ACCOUNT',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: colorPrimary,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: colorSurfaceContainerLowest,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: colorSurfaceContainerLow),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildSettingsRow(
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-              ),
-              _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.lock_open,
-                title: 'Change Password',
-              ),
-              _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.category_outlined,
-                title: 'Manage Categories',
-              ),
-              _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.settings_outlined,
-                title: 'Settings',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const SettingsScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                            return FadeTransition(
-                              opacity: Tween<double>(begin: 0.0, end: 1.0)
-                                  .animate(
-                                    CurvedAnimation(
-                                      parent: animation,
-                                      curve: Curves.linear,
-                                    ),
-                                  ),
-                              child: child,
-                            );
-                          },
-                      transitionDuration: const Duration(milliseconds: 200),
-                      reverseTransitionDuration: const Duration(
-                        milliseconds: 200,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Settings',
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black, // Formatted strictly in black
+                        letterSpacing: -0.5,
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 2),
+                    Text(
+                      'Manage your app preferences',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: colorSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 
-  // Preferences Settings Section List
+  // 1. Preferences Section Widget
   Widget _buildPreferencesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: colorPrimary,
+              color: colorOnSurfaceVariant,
               letterSpacing: 1.2,
             ),
           ),
@@ -489,29 +232,10 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.payments_outlined,
                 title: 'Currency',
-                suffixText: 'Indian Rupee (₹)',
-              ),
-              _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.notifications_none,
-                title: 'Transaction Notifications',
-              ),
-              _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.dark_mode_outlined,
-                title: 'Dark Mode',
-                trailingWidget: Switch(
-                  value: _isDarkModeEnabled,
-                  activeColor: Colors.white,
-                  activeTrackColor: colorPrimary,
-                  inactiveThumbColor: colorSecondary,
-                  inactiveTrackColor: colorSurfaceContainerLow,
-                  onChanged: (val) {
-                    setState(() {
-                      _isDarkModeEnabled = val;
-                    });
-                  },
-                ),
+                suffixText: 'INR ₹',
+                onTap: () {
+                  // Placeholder onTap
+                },
               ),
             ],
           ),
@@ -520,19 +244,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Support Settings Section List
-  Widget _buildSupportSection() {
+  // 2. Privacy & Security Section Widget
+  Widget _buildPrivacySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 8, bottom: 8),
           child: Text(
-            'SUPPORT',
+            'PRIVACY & SECURITY',
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: colorPrimary,
+              color: colorOnSurfaceVariant,
               letterSpacing: 1.2,
             ),
           ),
@@ -552,23 +276,29 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           child: Column(
             children: [
-              _buildSettingsRow(icon: Icons.help_outline, title: 'Help Center'),
-              _buildDivider(),
-              _buildSettingsRow(icon: Icons.gavel, title: 'Privacy Policy'),
-              _buildDivider(),
               _buildSettingsRow(
-                icon: Icons.description_outlined,
-                title: 'Terms & Conditions',
+                icon: Icons.screen_lock_portrait_outlined,
+                title: 'App Lock',
+                onTap: () {
+                  // Placeholder onTap
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
-                icon: Icons.file_download_outlined,
-                title: 'Export Data',
-              ),
-              _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.info_outline,
-                title: 'About SpendWise',
+                icon: Icons.fingerprint,
+                title: 'Biometric Authentication',
+                trailingWidget: Switch(
+                  value: _isBiometricEnabled,
+                  activeColor: Colors.white,
+                  activeTrackColor: colorPrimaryContainer,
+                  inactiveThumbColor: colorSecondary,
+                  inactiveTrackColor: colorSurfaceContainerLow,
+                  onChanged: (val) {
+                    setState(() {
+                      _isBiometricEnabled = val;
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -577,86 +307,282 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Outlined Logout Button
-  Widget _buildLogoutButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: () {
-          // Future Sign out logic
-        },
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: colorError.withOpacity(0.2), width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          foregroundColor: colorError,
-        ),
-        child: Text(
-          'Logout',
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-
-  // Footer Component
-  Widget _buildFooter() {
+  // 3. Data Section Widget
+  Widget _buildDataSection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'SpendWise',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: colorPrimary.withOpacity(0.3),
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          child: Text(
+            'DATA',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: colorOnSurfaceVariant,
+              letterSpacing: 1.2,
+            ),
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          'Version 1.0.0',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: colorSecondary.withOpacity(0.5),
+        Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Made with ❤️ in India',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: colorSecondary.withOpacity(0.5),
+          child: Column(
+            children: [
+              _buildSettingsRow(
+                icon: Icons.download_outlined,
+                title: 'Export Transactions',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                icon: Icons.cloud_upload_outlined,
+                title: 'Cloud Backup',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                icon: Icons.cleaning_services_outlined,
+                title: 'Clear Cache',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
+  // 4. About Section Widget
+  Widget _buildAboutSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          child: Text(
+            'ABOUT',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: colorOnSurfaceVariant,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorSurfaceContainerLow),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildSettingsRow(
+                title: 'Privacy Policy',
+                trailingWidget: Icon(
+                  Icons.open_in_new,
+                  color: colorOutlineVariant,
+                  size: 20,
+                ),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Terms & Conditions',
+                trailingWidget: Icon(
+                  Icons.open_in_new,
+                  color: colorOutlineVariant,
+                  size: 20,
+                ),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Open Source Licenses',
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Rate SpendWise',
+                trailingWidget: Icon(
+                  Icons.star_outline,
+                  color: colorOutlineVariant,
+                  size: 20,
+                ),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+              _buildDivider(),
+              _buildSettingsRow(
+                title: 'Version',
+                suffixText: 'SpendWise v1.0.0',
+                trailingWidget: const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 5. Danger Zone Section Widget
+  Widget _buildDangerZoneSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          child: Text(
+            'DANGER ZONE',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: colorError,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: colorSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colorError.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildSettingsRow(
+                icon: Icons.delete_forever_outlined,
+                iconColor: colorError,
+                iconBgColor: colorErrorContainer,
+                textColor: colorError,
+                title: 'Delete Account',
+                trailingWidget: const SizedBox.shrink(),
+                onTap: () {
+                  // Placeholder onTap
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Footer Component
+  Widget _buildFooter() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'SpendWise',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colorPrimary.withOpacity(0.3),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Version 1.0.0',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: colorSecondary.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Made with ❤️ in India',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: colorSecondary.withOpacity(0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Helper row builder inside cards
   Widget _buildSettingsRow({
-    required IconData icon,
+    IconData? icon,
     required String title,
     String? suffixText,
     Widget? trailingWidget,
     VoidCallback? onTap,
+    Color? iconColor,
+    Color? iconBgColor,
+    Color? textColor,
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, color: colorOnSurfaceVariant, size: 22),
-            const SizedBox(width: 16),
+            if (icon != null) ...[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBgColor ?? colorPrimaryContainer.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor ?? colorPrimary, size: 20),
+              ),
+              const SizedBox(width: 16),
+            ],
             Expanded(
               child: Text(
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: colorOnSurface,
+                  color: textColor ?? colorOnSurface,
                 ),
               ),
             ),
@@ -674,7 +600,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             if (trailingWidget != null)
               trailingWidget
             else
-              Icon(Icons.chevron_right, color: colorOutline, size: 20),
+              Icon(Icons.chevron_right, color: colorOutlineVariant, size: 20),
           ],
         ),
       ),
