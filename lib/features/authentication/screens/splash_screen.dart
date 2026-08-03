@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
-import 'package:spendwise/features/authentication/screens/dashboard_screen.dart';
+//import 'package:spendwise/features/authentication/screens/dashboard_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
+import 'package:spendwise/core/shell/home_shell.dart';
 
 //import 'dart:math' as math;
 
@@ -73,7 +74,7 @@ class _SpendWiseSplashScreenState extends State<SpendWiseSplashScreen>
           MaterialPageRoute(
             builder: (context) =>
                 refreshedUser != null && refreshedUser.emailVerified
-                ? const DashboardScreen()
+                ? const HomeShell()
                 : const VerifyEmailScreen(),
           ),
         );
