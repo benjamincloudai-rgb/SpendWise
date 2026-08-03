@@ -259,15 +259,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
 
             // --- Fixed Bottom Navigation Bar ---
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _EntranceAnimation(
-                delayMs: 400,
-                child: _buildBottomNavigation(context),
-              ),
-            ),
+            
           ],
         ),
       ),
@@ -694,91 +686,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   // Sticky Bottom Navigation Bar (Copied exactly from Dashboard and swapped active tab)
-  Widget _buildBottomNavigation(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
-    return Container(
-      color: colorSurfaceContainerLowest,
-      padding: EdgeInsets.only(
-        top: 12,
-        bottom: MediaQuery.paddingOf(context).bottom + 8,
-        left: screenWidth * 0.05,
-        right: screenWidth * 0.05,
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildNavItem(
-                  Icons.dashboard,
-                  'Dashboard',
-                  onTap: () {
-                    Navigator.pop(context); // Symmetrical linear fade pop
-                  },
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  Icons.receipt_long,
-                  'History',
-                  isActive: true, // Selected tab active style matching specs
-                ),
-              ),
-              Expanded(child: _buildNavItem(Icons.leaderboard, 'Stats')),
-              Expanded(child: _buildNavItem(Icons.person, 'Profile')),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    IconData icon,
-    String label, {
-    bool isActive = false,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive ? colorPrimaryContainer : Colors.transparent,
-              ),
-              child: Icon(
-                icon,
-                size: 22,
-                color: isActive ? Colors.white : colorSecondary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? colorPrimary : colorSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 
   // Style mapper for category circle structures
   _CategoryStyle _getCategoryStyle(String category, TransactionType type) {
