@@ -674,7 +674,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
               ),
             ),
             const SizedBox(width: 10),
-            IntrinsicWidth(
+            Flexible(
               child: TextField(
                 controller: _amountController,
                 autofocus: true,

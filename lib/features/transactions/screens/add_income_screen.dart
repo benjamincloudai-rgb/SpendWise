@@ -680,7 +680,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
               ),
             ),
             const SizedBox(width: 10),
-            IntrinsicWidth(
+            Flexible(
               child: TextField(
                 controller: _amountController,
                 autofocus: true,

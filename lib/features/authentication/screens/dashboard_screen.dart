@@ -232,13 +232,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      "₹${summary.currentBalance.toStringAsFixed(0)}",
-                      style: GoogleFonts.inter(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w700,
-                        color: colorOnSurface,
-                        letterSpacing: -1,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "₹${summary.currentBalance.toStringAsFixed(0)}",
+                        style: GoogleFonts.inter(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w700,
+                          color: colorOnSurface,
+                          letterSpacing: -1,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -247,20 +251,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildOverviewColumn(
-                          'Income',
-                          "₹${summary.totalIncome.toStringAsFixed(0)}",
-                          colorPrimary,
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewColumn(
+                            'Income',
+                            "₹${summary.totalIncome.toStringAsFixed(0)}",
+                            colorPrimary,
+                          ),
                         ),
-                        _buildOverviewColumn(
-                          'Expenses',
-                          "₹${summary.totalExpense.toStringAsFixed(0)}",
-                          colorError,
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewColumn(
+                            'Expenses',
+                            "₹${summary.totalExpense.toStringAsFixed(0)}",
+                            colorError,
+                          ),
                         ),
-                        _buildOverviewColumn(
-                          'Savings',
-                          "₹${summary.savings.toStringAsFixed(0)}",
-                          colorTertiary,
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewColumn(
+                            'Savings',
+                            "₹${summary.savings.toStringAsFixed(0)}",
+                            colorTertiary,
+                          ),
                         ),
                       ],
                     ),
@@ -287,12 +300,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: valueColor,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: valueColor,
+            ),
           ),
         ),
       ],
