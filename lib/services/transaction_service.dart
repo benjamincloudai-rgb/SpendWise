@@ -1,63 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/transaction_model.dart';
+import 'firestore_service.dart';
 
-class TransactionService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  String get _uid {
-    final user = _auth.currentUser;
-
-    if (user == null) {
-      throw Exception('User is not logged in.');
-    }
-
-    return user.uid;
-  }
-
+class TransactionService extends FirestoreService<TransactionModel> {
   CollectionReference<Map<String, dynamic>> get _transactionCollection {
-    return _firestore.collection('users').doc(_uid).collection('transactions');
+    return firestore.collection('users').doc(uid).collection('transactions');
   }
 
-  Future<void> addTransaction(TransactionModel transaction) async {
-    try {
-      final docRef = _transactionCollection.doc();
+  Future<void> addTransaction(TransactionModel transaction) => add(
+        _transactionCollection,
+        transaction,
+        label: 'transaction',
+        withId: (transaction, id) => transaction.copyWith(id: id),
+        toMap: (transaction) => transaction.toMap(),
+      );
 
-      final transactionWithId = transaction.copyWith(id: docRef.id);
+  Future<void> updateTransaction(TransactionModel transaction) => update(
+        _transactionCollection,
+        transaction.id,
+        transaction,
+        label: 'transaction',
+        toMap: (transaction) => transaction.toMap(),
+      );
 
-      await docRef.set(transactionWithId.toMap());
-    } on FirebaseException catch (e) {
-      throw Exception('Failed to add transaction: ${e.message}');
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
-    }
-  }
-
-  // --- NEW: Update existing Firestore transaction document ---
-  Future<void> updateTransaction(TransactionModel transaction) async {
-    try {
-      // Targets the existing document by its ID and overwrites with updated properties
-      await _transactionCollection.doc(transaction.id).set(transaction.toMap());
-    } on FirebaseException catch (e) {
-      throw Exception('Failed to update transaction: ${e.message}');
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
-    }
-  }
-
-  // --- NEW: Delete existing Firestore transaction document ---
-  Future<void> deleteTransaction(String id) async {
-    try {
-      // Targets the document by its ID and deletes it asynchronously
-      await _transactionCollection.doc(id).delete();
-    } on FirebaseException catch (e) {
-      throw Exception('Failed to delete transaction: ${e.message}');
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
-    }
-  }
+  Future<void> deleteTransaction(String id) =>
+      delete(_transactionCollection, id, label: 'transaction');
 
   Stream<List<TransactionModel>> getTransactions() {
     return _transactionCollection
