@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:spendwise/core/shell/home_shell.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
-import 'package:spendwise/features/authentication/screens/dashboard_screen.dart';
 import 'dart:async';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -67,7 +67,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          MaterialPageRoute(builder: (_) => const HomeShell()),
         );
       }
     });
@@ -120,7 +120,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          MaterialPageRoute(builder: (context) => const HomeShell()),
         );
       } else {
         if (!mounted) return;
