@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
@@ -23,16 +24,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
   int _cooldownSeconds = 60;
 
   // Exact Colors from the Login/Register/Forgot Password Theme
-  final Color colorPrimary = const Color(0xFF006E2F);
-  final Color colorPrimaryContainer = const Color(0xFF22C55E);
-  final Color colorBackground = const Color(0xFFF9F9F9);
-  final Color colorSurfaceContainerLowest = const Color(0xFFFFFFFF);
-  final Color colorSurfaceContainerLow = const Color(0xFFF3F3F3);
-  final Color colorOnSurfaceVariant = const Color(0xFF3D4A3D);
-  final Color colorOnSurface = const Color(0xFF1A1C1C);
-  final Color colorPrimaryFixed = const Color(0xFF6BFF8F);
-  final Color colorSecondaryFixed = const Color(0xFFDAE2FD);
-  final Color colorOutlineVariant = const Color(0xFFBCCBB9);
+  final Color colorPrimary = AppColors.primary;
+  final Color colorPrimaryContainer = AppColors.primaryContainer;
+  final Color colorBackground = AppColors.background;
+  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
+  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
+  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
+  final Color colorOnSurface = AppColors.onSurface;
+  final Color colorPrimaryFixed = AppColors.primaryFixed;
+  final Color colorSecondaryFixed = AppColors.secondaryFixed;
+  final Color colorOutlineVariant = AppColors.outlineVariant;
 
   @override
   void initState() {

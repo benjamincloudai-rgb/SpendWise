@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
 
 class SharedBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -13,10 +14,10 @@ class SharedBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color colorPrimary = Color(0xFF006E2F);
-    const Color colorPrimaryContainer = Color(0xFF22C55E);
-    const Color colorSecondary = Color(0xFF565E74);
-    const Color colorSurface = Color(0xFFFFFFFF);
+    const Color colorPrimary = AppColors.primary;
+    const Color colorPrimaryContainer = AppColors.primaryContainer;
+    const Color colorSecondary = AppColors.secondary;
+    const Color colorSurface = AppColors.surfaceContainerLowest;
 
     final screenWidth = MediaQuery.of(context).size.width;
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
 //import 'package:spendwise/features/authentication/screens/dashboard_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -97,9 +98,9 @@ class _SpendWiseSplashScreenState extends State<SpendWiseSplashScreen>
   Widget build(BuildContext context) {
     // Colors from Tailwind Config
     const colorBg = Color(0xFFF0FDF4); // rgb(240, 253, 244)
-    const colorPrimary = Color(0xFF006E2F);
-    const colorPrimaryContainer = Color(0xFF22C55E);
-    const colorSecondaryContainer = Color(0xFFDAE2FD);
+    const colorPrimary = AppColors.primary;
+    const colorPrimaryContainer = AppColors.primaryContainer;
+    const colorSecondaryContainer = AppColors.secondaryFixed;
     //const colorOnBackground = Color(0xFF1A1C1C);
 
     return Scaffold(

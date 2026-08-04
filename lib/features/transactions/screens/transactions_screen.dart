@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/utils/aggregations.dart';
 import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
@@ -26,23 +27,23 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   String _selectedFilter = 'All';
 
   // Strict colors matching the SpendWise design system
-  final Color colorPrimary = const Color(0xFF006E2F);
-  final Color colorPrimaryContainer = const Color(0xFF22C55E);
-  final Color colorBackground = const Color(0xFFF9F9F9);
-  final Color colorSurfaceContainerLowest = const Color(0xFFFFFFFF);
-  final Color colorSurfaceContainerLow = const Color(0xFFF3F3F3);
-  final Color colorSurfaceContainer = const Color(0xFFEEEEEE);
-  final Color colorOnSurfaceVariant = const Color(0xFF3D4A3D);
-  final Color colorOnSurface = const Color(0xFF1A1C1C);
-  final Color colorPrimaryFixed = const Color(0xFF6BFF8F);
-  final Color colorSecondaryFixed = const Color(0xFFDAE2FD);
-  final Color colorOutlineVariant = const Color(0xFFBCCBB9);
+  final Color colorPrimary = AppColors.primary;
+  final Color colorPrimaryContainer = AppColors.primaryContainer;
+  final Color colorBackground = AppColors.background;
+  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
+  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
+  final Color colorSurfaceContainer = AppColors.surfaceContainer;
+  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
+  final Color colorOnSurface = AppColors.onSurface;
+  final Color colorPrimaryFixed = AppColors.primaryFixed;
+  final Color colorSecondaryFixed = AppColors.secondaryFixed;
+  final Color colorOutlineVariant = AppColors.outlineVariant;
 
   // Secondary, Tertiary, and Error colors matching specs
-  final Color colorSecondary = const Color(0xFF565E74);
-  final Color colorTertiary = const Color(0xFF505F76);
-  final Color colorError = const Color(0xFFBA1A1A);
-  final Color colorErrorContainer = const Color(0xFFFFDAD6);
+  final Color colorSecondary = AppColors.secondary;
+  final Color colorTertiary = AppColors.tertiary;
+  final Color colorError = AppColors.error;
+  final Color colorErrorContainer = AppColors.errorContainer;
 
   // Dynamically populated via Firestore snapshots stream
   List<TransactionModel> _allTransactions = [];
