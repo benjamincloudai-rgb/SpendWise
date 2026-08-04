@@ -5,6 +5,7 @@ import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:spendwise/services/category_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   bool _isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final CategoryService _categoryService = CategoryService();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -338,6 +340,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           });
+
+      try {
+        await _categoryService.seedDefaultCategories();
+      } catch (_) {
+        // Seeding failure must never block or fail registration.
+      }
 
       // Send verification email
       await userCredential.user!.sendEmailVerification();
