@@ -1,10 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum CategoryType { expense, income }
+
 class CategoryModel {
   final String id;
   final String name;
   final String icon;
   final int color;
+  final CategoryType type;
+  final int sortOrder;
   final DateTime createdAt;
 
   const CategoryModel({
@@ -12,6 +16,8 @@ class CategoryModel {
     required this.name,
     required this.icon,
     required this.color,
+    this.type = CategoryType.expense,
+    this.sortOrder = 0,
     required this.createdAt,
   });
 
@@ -20,6 +26,8 @@ class CategoryModel {
       'name': name,
       'icon': icon,
       'color': color,
+      'type': type.name,
+      'sortOrder': sortOrder,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -30,6 +38,10 @@ class CategoryModel {
       name: map['name'] ?? '',
       icon: map['icon'] ?? '',
       color: map['color'] ?? 0,
+      type: map['type'] == 'income'
+          ? CategoryType.income
+          : CategoryType.expense,
+      sortOrder: (map['sortOrder'] as num?)?.toInt() ?? 0,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -39,6 +51,8 @@ class CategoryModel {
     String? name,
     String? icon,
     int? color,
+    CategoryType? type,
+    int? sortOrder,
     DateTime? createdAt,
   }) {
     return CategoryModel(
@@ -46,6 +60,8 @@ class CategoryModel {
       name: name ?? this.name,
       icon: icon ?? this.icon,
       color: color ?? this.color,
+      type: type ?? this.type,
+      sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -1,24 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// --- CATEGORY DATA MODEL ---
-class CategoryModel {
-  final String id;
-  final String name;
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-  final int transactionCount;
-
-  CategoryModel({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.iconColor,
-    required this.backgroundColor,
-    required this.transactionCount,
-  });
-}
+import '../../../models/category_model.dart';
+import '../../../services/category_service.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -32,9 +16,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   late AnimationController _floatController;
   bool _isExpenseSelected = true;
 
+  final CategoryService _categoryService = CategoryService();
+
+  List<CategoryModel> _categories = [];
+
+  late final Stream<List<CategoryModel>> _categoriesStream;
+
   // Strict colors matching the SpendWise design system
   final Color colorPrimary = const Color(0xFF006E2F);
-  final Color colorPrimaryContainer = const Color(0xFF22C55E);
   final Color colorBackground = const Color(0xFFF9F9F9);
   final Color colorSurfaceContainerLowest = const Color(0xFFFFFFFF);
   final Color colorSurfaceContainerLow = const Color(0xFFF3F3F3);
@@ -49,104 +38,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   final Color colorSecondary = const Color(0xFF565E74);
   final Color colorTertiary = const Color(0xFF505F76);
 
-  // Predefined lists of active categories
-  final List<CategoryModel> _expenseCategories = [
-    CategoryModel(
-      id: '1',
-      name: 'Food',
-      icon: Icons.lunch_dining,
-      iconColor: Colors.orange.shade800,
-      backgroundColor: Colors.orange.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '2',
-      name: 'Transport',
-      icon: Icons.local_taxi,
-      iconColor: Colors.blue.shade800,
-      backgroundColor: Colors.blue.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '3',
-      name: 'Shopping',
-      icon: Icons.shopping_cart,
-      iconColor: Colors.purple.shade800,
-      backgroundColor: Colors.purple.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '4',
-      name: 'Entertainment',
-      icon: Icons.movie_outlined,
-      iconColor: Colors.pink.shade800,
-      backgroundColor: Colors.pink.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '5',
-      name: 'Health',
-      icon: Icons.medical_services_outlined,
-      iconColor: Colors.red.shade800,
-      backgroundColor: Colors.red.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '6',
-      name: 'Bills',
-      icon: Icons.home_outlined,
-      iconColor: Colors.green.shade800,
-      backgroundColor: Colors.green.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '7',
-      name: 'Education',
-      icon: Icons.book_outlined,
-      iconColor: Colors.indigo.shade800,
-      backgroundColor: Colors.indigo.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '8',
-      name: 'Travel',
-      icon: Icons.flight_outlined,
-      iconColor: Colors.teal.shade800,
-      backgroundColor: Colors.teal.shade50,
-      transactionCount: 0,
-    ),
-  ];
-
-  final List<CategoryModel> _incomeCategories = [
-    CategoryModel(
-      id: '101',
-      name: 'Salary',
-      icon: Icons.account_balance_wallet_outlined,
-      iconColor: const Color(0xFF006E2F),
-      backgroundColor: const Color(0xFF22C55E).withOpacity(0.15),
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '102',
-      name: 'Freelance',
-      icon: Icons.laptop,
-      iconColor: Colors.teal.shade800,
-      backgroundColor: Colors.teal.shade50,
-      transactionCount: 0,
-    ),
-    CategoryModel(
-      id: '103',
-      name: 'Investments',
-      icon: Icons.trending_up,
-      iconColor: Colors.blue.shade800,
-      backgroundColor: Colors.blue.shade50,
-      transactionCount: 0,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
+    _categoriesStream = _categoryService.getCategories();
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
@@ -159,24 +54,30 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     super.dispose();
   }
 
-  // Opens a custom bottom sheet to add a category dynamically
-  void _showAddCategorySheet() {
+  // Opens a custom bottom sheet to add or edit a category
+  void _showAddCategorySheet([CategoryModel? existing]) {
     final nameController = TextEditingController();
-    IconData selectedCardIcon = Icons.category_outlined;
-    Color selectedCardColor = colorPrimary;
-    Color selectedCardBgColor = colorPrimaryContainer.withOpacity(0.15);
+    IconData selectedCardIcon = existing != null
+        ? _iconForKey(existing.icon)
+        : Icons.category_outlined;
+    Color selectedCardColor =
+        existing != null ? Color(existing.color) : colorPrimary;
 
-    final List<IconData> iconOptions = [
-      Icons.restaurant,
-      Icons.shopping_bag,
-      Icons.directions_car,
-      Icons.movie,
-      Icons.local_hospital,
-      Icons.home,
-      Icons.school,
-      Icons.flight,
-      Icons.pets,
-      Icons.savings,
+    if (existing != null) {
+      nameController.text = existing.name;
+    }
+
+    final List<(String, IconData)> iconOptions = [
+      ('restaurant', Icons.restaurant),
+      ('shopping_bag', Icons.shopping_bag),
+      ('directions_car', Icons.directions_car),
+      ('movie', Icons.movie),
+      ('local_hospital', Icons.local_hospital),
+      ('home', Icons.home),
+      ('school', Icons.school),
+      ('flight', Icons.flight),
+      ('pets', Icons.pets),
+      ('savings', Icons.savings),
     ];
 
     final List<Color> colorOptions = [
@@ -224,7 +125,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Create Custom Category',
+                      existing == null
+                          ? 'Create Custom Category'
+                          : 'Edit Category',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -278,7 +181,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                         separatorBuilder: (context, index) =>
                             const SizedBox(width: 10),
                         itemBuilder: (context, index) {
-                          final icon = iconOptions[index];
+                          final icon = iconOptions[index].$2;
                           final isSelected = selectedCardIcon == icon;
                           return GestureDetector(
                             onTap: () {
@@ -335,7 +238,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                             onTap: () {
                               setModalState(() {
                                 selectedCardColor = color;
-                                selectedCardBgColor = color.withOpacity(0.1);
                               });
                             },
                             child: Container(
@@ -367,22 +269,20 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       onPressed: () {
                         final enteredName = nameController.text.trim();
                         if (enteredName.isNotEmpty) {
-                          setState(() {
-                            final newCategory = CategoryModel(
-                              id: DateTime.now().millisecondsSinceEpoch
-                                  .toString(),
-                              name: enteredName,
-                              icon: selectedCardIcon,
-                              iconColor: selectedCardColor,
-                              backgroundColor: selectedCardBgColor,
-                              transactionCount: 0,
-                            );
-                            if (_isExpenseSelected) {
-                              _expenseCategories.add(newCategory);
-                            } else {
-                              _incomeCategories.add(newCategory);
-                            }
-                          });
+                          final type = _isExpenseSelected
+                              ? CategoryType.expense
+                              : CategoryType.income;
+                          final category = CategoryModel(
+                            id: existing?.id ?? '',
+                            name: enteredName,
+                            icon: _keyForIcon(selectedCardIcon),
+                            color: selectedCardColor.toARGB32(),
+                            type: type,
+                            sortOrder: existing?.sortOrder ??
+                                _nextSortOrder(type),
+                            createdAt: existing?.createdAt ?? DateTime.now(),
+                          );
+                          _saveCategory(category, isEditing: existing != null);
                           Navigator.pop(context);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -402,7 +302,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                         elevation: 1,
                       ),
                       child: Text(
-                        'Create Category',
+                        existing == null ? 'Create Category' : 'Save Category',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -419,12 +319,83 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     );
   }
 
+  Future<void> _saveCategory(CategoryModel category,
+      {required bool isEditing}) async {
+    try {
+      if (isEditing) {
+        await _categoryService.updateCategory(category);
+      } else {
+        await _categoryService.addCategory(category);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isEditing
+                  ? 'Failed to update category'
+                  : 'Failed to add category',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  int _nextSortOrder(CategoryType type) {
+    final sortOrders = _categories
+        .where((c) => c.type == type)
+        .map((c) => c.sortOrder);
+    if (sortOrders.isEmpty) {
+      return 0;
+    }
+    return sortOrders.reduce((a, b) => a > b ? a : b) + 1;
+  }
+
+  IconData _iconForKey(String key) {
+    switch (key) {
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'directions_car':
+        return Icons.directions_car;
+      case 'movie':
+        return Icons.movie;
+      case 'local_hospital':
+        return Icons.local_hospital;
+      case 'home':
+        return Icons.home;
+      case 'school':
+        return Icons.school;
+      case 'flight':
+        return Icons.flight;
+      case 'pets':
+        return Icons.pets;
+      case 'savings':
+        return Icons.savings;
+      default:
+        return Icons.category_outlined;
+    }
+  }
+
+  String _keyForIcon(IconData icon) {
+    if (icon == Icons.restaurant) return 'restaurant';
+    if (icon == Icons.shopping_bag) return 'shopping_bag';
+    if (icon == Icons.directions_car) return 'directions_car';
+    if (icon == Icons.movie) return 'movie';
+    if (icon == Icons.local_hospital) return 'local_hospital';
+    if (icon == Icons.home) return 'home';
+    if (icon == Icons.school) return 'school';
+    if (icon == Icons.flight) return 'flight';
+    if (icon == Icons.pets) return 'pets';
+    if (icon == Icons.savings) return 'savings';
+    return 'category';
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final activeList = _isExpenseSelected
-        ? _expenseCategories
-        : _incomeCategories;
 
     return Scaffold(
       backgroundColor: colorBackground,
@@ -477,26 +448,62 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                         const SizedBox(height: 24),
 
                         // Empty State vs Populated Category Cards List
-                        activeList.isEmpty
-                            ? _EntranceAnimation(
+                        StreamBuilder<List<CategoryModel>>(
+                          stream: _categoriesStream,
+                          builder: (context, snapshot) {
+                            _categories = snapshot.data ?? [];
+
+                            if (snapshot.hasError) {
+                              return _EntranceAnimation(
                                 delayMs: 180,
                                 child: _buildEmptyState(),
-                              )
-                            : _EntranceAnimation(
-                                delayMs: 180,
-                                child: ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: activeList.length,
-                                  separatorBuilder: (context, index) =>
-                                      const SizedBox(height: 12),
-                                  itemBuilder: (context, index) {
-                                    return _buildCategoryCard(
-                                      activeList[index],
-                                    );
-                                  },
+                              );
+                            }
+
+                            if (snapshot.connectionState ==
+                                    ConnectionState.waiting &&
+                                _categories.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 60),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
                                 ),
-                              ),
+                              );
+                            }
+
+                            final activeList = _isExpenseSelected
+                                ? _categories
+                                    .where(
+                                        (c) => c.type == CategoryType.expense)
+                                    .toList()
+                                : _categories
+                                    .where(
+                                        (c) => c.type == CategoryType.income)
+                                    .toList();
+
+                            return activeList.isEmpty
+                                ? _EntranceAnimation(
+                                    delayMs: 180,
+                                    child: _buildEmptyState(),
+                                  )
+                                : _EntranceAnimation(
+                                    delayMs: 180,
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: activeList.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 12),
+                                      itemBuilder: (context, index) {
+                                        return _buildCategoryCard(
+                                          activeList[index],
+                                        );
+                                      },
+                                    ),
+                                  );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -698,7 +705,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   Widget _buildCategoryCard(CategoryModel item) {
     return _AnimatedPressCard(
       onTap: () {
-        // Option to edit or view list detail triggers here
+        _showAddCategorySheet(item);
       },
       onLongPress: () {
         // Allows user to easily delete categories to test empty states
@@ -730,15 +737,18 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    setState(() {
-                      if (_isExpenseSelected) {
-                        _expenseCategories.removeWhere((c) => c.id == item.id);
-                      } else {
-                        _incomeCategories.removeWhere((c) => c.id == item.id);
-                      }
-                    });
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     Navigator.pop(context);
+                    try {
+                      await _categoryService.deleteCategory(item.id);
+                    } catch (_) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Failed to delete category'),
+                        ),
+                      );
+                    }
                   },
                   child: Text(
                     'Delete',
@@ -773,10 +783,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: item.backgroundColor,
+                color: Color(item.color).withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(item.icon, color: item.iconColor, size: 24),
+              child: Icon(
+                _iconForKey(item.icon),
+                color: Color(item.color),
+                size: 24,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -793,11 +807,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.transactionCount == 0
-                        ? 'No transactions'
-                        : item.transactionCount == 1
-                        ? '1 transaction'
-                        : '${item.transactionCount} transactions', // Reduced visual emphasis light grey count
+                    'No transactions',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
