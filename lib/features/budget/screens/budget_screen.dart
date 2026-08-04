@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/utils/formatters.dart';
+import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/budget_model.dart';
 import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/services/budget_service.dart';
@@ -796,12 +797,12 @@ class _BudgetScreenState extends State<BudgetScreen>
     // fall back to keyword styling for legacy or deleted categories.
     final categoryMatch = _findCategory(item.categoryName);
     final style = categoryMatch != null
-        ? _CategoryStyle(
-            _iconForKey(categoryMatch.icon),
-            Color(categoryMatch.color),
-            Color(categoryMatch.color).withOpacity(0.15),
+        ? CategoryVisual(
+            icon: categoryIconFor(categoryMatch.icon),
+            iconColor: Color(categoryMatch.color),
+            backgroundColor: Color(categoryMatch.color).withOpacity(0.15),
           )
-        : _getCategoryStyle(item.categoryName);
+        : categoryVisualFor(item.categoryName);
 
     // Dynamic styling based on spent vs budget limits
     Color barColor = colorPrimary;
@@ -1060,102 +1061,6 @@ class _BudgetScreenState extends State<BudgetScreen>
     }
     return null;
   }
-
-  // Maps stored icon key strings to their Material icon
-  IconData _iconForKey(String key) {
-    switch (key) {
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'shopping_bag':
-        return Icons.shopping_bag;
-      case 'directions_car':
-        return Icons.directions_car;
-      case 'movie':
-        return Icons.movie;
-      case 'local_hospital':
-        return Icons.local_hospital;
-      case 'home':
-        return Icons.home;
-      case 'school':
-        return Icons.school;
-      case 'flight':
-        return Icons.flight;
-      case 'pets':
-        return Icons.pets;
-      case 'savings':
-        return Icons.savings;
-      default:
-        return Icons.category_outlined;
-    }
-  }
-
-  // Predefined style categorizer config mapper
-  _CategoryStyle _getCategoryStyle(String category) {
-    final norm = category.toLowerCase().trim();
-    if (norm.contains('food')) {
-      return _CategoryStyle(
-        Icons.restaurant,
-        Colors.orange.shade800,
-        Colors.orange.shade50,
-      );
-    } else if (norm.contains('shopping')) {
-      return _CategoryStyle(
-        Icons.shopping_bag,
-        Colors.pink.shade800,
-        Colors.pink.shade50,
-      );
-    } else if (norm.contains('transport') || norm.contains('commute')) {
-      return _CategoryStyle(
-        Icons.directions_car,
-        Colors.blue.shade800,
-        Colors.blue.shade50,
-      );
-    } else if (norm.contains('bills') || norm.contains('utility')) {
-      return _CategoryStyle(
-        Icons.payments,
-        Colors.indigo.shade800,
-        Colors.indigo.shade50,
-      );
-    } else if (norm.contains('entertainment') || norm.contains('movie')) {
-      return _CategoryStyle(
-        Icons.movie,
-        Colors.purple.shade800,
-        Colors.purple.shade50,
-      );
-    } else if (norm.contains('healthcare') || norm.contains('medical')) {
-      return _CategoryStyle(
-        Icons.local_hospital,
-        Colors.teal.shade800,
-        Colors.teal.shade50,
-      );
-    } else if (norm.contains('education') || norm.contains('school')) {
-      return _CategoryStyle(
-        Icons.school,
-        Colors.brown.shade800,
-        Colors.brown.shade50,
-      );
-    } else if (norm.contains('rent')) {
-      return _CategoryStyle(
-        Icons.home,
-        Colors.amber.shade900,
-        Colors.amber.shade50,
-      );
-    }
-    return _CategoryStyle(
-      Icons.category,
-      Colors.grey.shade800,
-      Colors.grey.shade100,
-    );
-  }
-}
-
-// Category Style model structure
-class _CategoryStyle {
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-
-  _CategoryStyle(this.icon, this.iconColor, this.backgroundColor);
 }
 
 // Background blur bubble element

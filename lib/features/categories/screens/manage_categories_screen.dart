@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../models/category_model.dart';
 import '../../../services/category_service.dart';
+import '../domain/category_visuals.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -58,7 +59,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   void _showAddCategorySheet([CategoryModel? existing]) {
     final nameController = TextEditingController();
     IconData selectedCardIcon = existing != null
-        ? _iconForKey(existing.icon)
+        ? categoryIconFor(existing.icon)
         : Icons.category_outlined;
     Color selectedCardColor =
         existing != null ? Color(existing.color) : colorPrimary;
@@ -67,18 +68,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       nameController.text = existing.name;
     }
 
-    final List<(String, IconData)> iconOptions = [
-      ('restaurant', Icons.restaurant),
-      ('shopping_bag', Icons.shopping_bag),
-      ('directions_car', Icons.directions_car),
-      ('movie', Icons.movie),
-      ('local_hospital', Icons.local_hospital),
-      ('home', Icons.home),
-      ('school', Icons.school),
-      ('flight', Icons.flight),
-      ('pets', Icons.pets),
-      ('savings', Icons.savings),
-    ];
+    final List<(String, IconData)> iconOptions = categoryIconOptions;
 
     final List<Color> colorOptions = [
       colorPrimary,
@@ -275,7 +265,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                           final category = CategoryModel(
                             id: existing?.id ?? '',
                             name: enteredName,
-                            icon: _keyForIcon(selectedCardIcon),
+                            icon: categoryKeyFor(selectedCardIcon),
                             color: selectedCardColor.toARGB32(),
                             type: type,
                             sortOrder: existing?.sortOrder ??
@@ -350,47 +340,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       return 0;
     }
     return sortOrders.reduce((a, b) => a > b ? a : b) + 1;
-  }
-
-  IconData _iconForKey(String key) {
-    switch (key) {
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'shopping_bag':
-        return Icons.shopping_bag;
-      case 'directions_car':
-        return Icons.directions_car;
-      case 'movie':
-        return Icons.movie;
-      case 'local_hospital':
-        return Icons.local_hospital;
-      case 'home':
-        return Icons.home;
-      case 'school':
-        return Icons.school;
-      case 'flight':
-        return Icons.flight;
-      case 'pets':
-        return Icons.pets;
-      case 'savings':
-        return Icons.savings;
-      default:
-        return Icons.category_outlined;
-    }
-  }
-
-  String _keyForIcon(IconData icon) {
-    if (icon == Icons.restaurant) return 'restaurant';
-    if (icon == Icons.shopping_bag) return 'shopping_bag';
-    if (icon == Icons.directions_car) return 'directions_car';
-    if (icon == Icons.movie) return 'movie';
-    if (icon == Icons.local_hospital) return 'local_hospital';
-    if (icon == Icons.home) return 'home';
-    if (icon == Icons.school) return 'school';
-    if (icon == Icons.flight) return 'flight';
-    if (icon == Icons.pets) return 'pets';
-    if (icon == Icons.savings) return 'savings';
-    return 'category';
   }
 
   @override
@@ -787,7 +736,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _iconForKey(item.icon),
+                categoryIconFor(item.icon),
                 color: Color(item.color),
                 size: 24,
               ),

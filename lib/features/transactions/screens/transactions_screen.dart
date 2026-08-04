@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/utils/formatters.dart';
+import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
@@ -642,10 +643,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   // Individual Transaction Card (Redesigned with Inkwell tap routing & long-press delete confirmations)
   Widget _buildTransactionCard(TransactionModel tx) {
-    final style = _getCategoryStyle(
-      tx.categoryId,
-      tx.type,
-    ); // Maps exactly to categoryId
+    final style = categoryVisualFor(tx.categoryId); // Maps exactly to categoryId
     final isExpense = tx.type == TransactionType.expense;
     final isIncome = tx.type == TransactionType.income;
 
@@ -799,115 +797,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       ),
     );
   }
-
-  // Sticky Bottom Navigation Bar (Copied exactly from Dashboard and swapped active tab)
-  
-
-  // Style mapper for category circle structures
-  _CategoryStyle _getCategoryStyle(String category, TransactionType type) {
-    final normalized = category.toLowerCase().trim();
-
-    IconData icon = Icons.attach_money;
-    Color iconColor = colorPrimary;
-    Color bgColor = colorPrimaryContainer.withOpacity(0.15);
-
-    if (normalized.contains('food') ||
-        normalized.contains('dining') ||
-        normalized.contains('restaurant')) {
-      icon = Icons.restaurant;
-      iconColor = Colors.orange.shade800;
-      bgColor = Colors.orange.shade50;
-    } else if (normalized.contains('transport') ||
-        normalized.contains('commute')) {
-      icon = Icons.directions_car_outlined;
-      iconColor = Colors.blue.shade800;
-      bgColor = Colors.blue.shade50;
-    } else if (normalized.contains('shopping')) {
-      icon = Icons.shopping_bag_outlined;
-      iconColor = Colors.pink.shade800;
-      bgColor = Colors.pink.shade50;
-    } else if (normalized.contains('bills') ||
-        normalized.contains('utilities')) {
-      icon = Icons.electrical_services_outlined;
-      iconColor = Colors.red.shade800;
-      bgColor = Colors.red.shade50;
-    } else if (normalized.contains('entertainment') ||
-        normalized.contains('movie')) {
-      icon = Icons.movie_outlined;
-      iconColor = Colors.purple.shade800;
-      bgColor = Colors.purple.shade50;
-    } else if (normalized.contains('healthcare') ||
-        normalized.contains('medical')) {
-      icon = Icons.local_hospital_outlined;
-      iconColor = Colors.teal.shade800;
-      bgColor = Colors.teal.shade50;
-    } else if (normalized.contains('travel') || normalized.contains('flight')) {
-      icon = Icons.flight_outlined;
-      iconColor = Colors.cyan.shade800;
-      bgColor = Colors.cyan.shade50;
-    } else if (normalized.contains('education') ||
-        normalized.contains('school')) {
-      icon = Icons.school_outlined;
-      iconColor = Colors.brown.shade800;
-      bgColor = Colors.brown.shade50;
-    } else if (normalized.contains('groceries')) {
-      icon = Icons.shopping_basket_outlined;
-      iconColor = Colors.amber.shade900;
-      bgColor = Colors.amber.shade50;
-    } else if (normalized.contains('salary')) {
-      icon = Icons.account_balance_wallet_outlined;
-      iconColor = colorPrimary;
-      bgColor = colorPrimaryContainer.withOpacity(0.15);
-    } else if (normalized.contains('freelance') ||
-        normalized.contains('work')) {
-      icon = Icons.work_outline;
-      iconColor = Colors.indigo.shade800;
-      bgColor = Colors.indigo.shade50;
-    } else if (normalized.contains('investment')) {
-      icon = Icons.trending_up_outlined;
-      iconColor = Colors.lightGreen.shade800;
-      bgColor = Colors.lightGreen.shade50;
-    } else if (normalized.contains('business')) {
-      icon = Icons.storefront_outlined;
-      iconColor = Colors.blueGrey.shade800;
-      bgColor = Colors.blueGrey.shade50;
-    } else if (normalized.contains('gift')) {
-      icon = Icons.card_giftcard_outlined;
-      iconColor = Colors.pinkAccent.shade700;
-      bgColor = Colors.pink.shade50;
-    } else if (normalized.contains('cashback')) {
-      icon = Icons.savings_outlined;
-      iconColor = Colors.deepOrange.shade800;
-      bgColor = Colors.deepOrange.shade50;
-    } else if (normalized.contains('transfer')) {
-      icon = Icons.swap_horiz;
-      iconColor = Colors.blue.shade800;
-      bgColor = Colors.blue.shade50;
-    } else if (normalized.contains('savings')) {
-      icon = Icons.savings_outlined;
-      iconColor = Colors.green.shade800;
-      bgColor = Colors.green.shade50;
-    }
-
-    return _CategoryStyle(
-      icon: icon,
-      iconColor: iconColor,
-      backgroundColor: bgColor,
-    );
-  }
-}
-
-// Category Style model structure
-class _CategoryStyle {
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-
-  _CategoryStyle({
-    required this.icon,
-    required this.iconColor,
-    required this.backgroundColor,
-  });
 }
 
 // Background blur bubble element

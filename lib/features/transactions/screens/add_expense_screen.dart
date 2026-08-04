@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/utils/formatters.dart';
+import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/category_service.dart';
@@ -214,7 +215,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   void _resolveEditCategoryIcon() {
     for (final category in _visibleCategories) {
       if (category.name == _selectedCategory) {
-        _selectedCategoryIcon = _iconForKey(category.icon);
+        _selectedCategoryIcon = categoryIconFor(category.icon);
         return;
       }
     }
@@ -225,7 +226,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
     if (_visibleCategories.isEmpty) return;
     final first = _visibleCategories.first;
     _selectedCategory = first.name;
-    _selectedCategoryIcon = _iconForKey(first.icon);
+    _selectedCategoryIcon = categoryIconFor(first.icon);
   }
 
   // Expense-only categories from the Firestore stream
@@ -239,33 +240,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
         .map((c) => c.sortOrder);
     if (sortOrders.isEmpty) return 0;
     return sortOrders.reduce((a, b) => a > b ? a : b) + 1;
-  }
-
-  IconData _iconForKey(String key) {
-    switch (key) {
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'shopping_bag':
-        return Icons.shopping_bag;
-      case 'directions_car':
-        return Icons.directions_car;
-      case 'movie':
-        return Icons.movie;
-      case 'local_hospital':
-        return Icons.local_hospital;
-      case 'home':
-        return Icons.home;
-      case 'school':
-        return Icons.school;
-      case 'flight':
-        return Icons.flight;
-      case 'pets':
-        return Icons.pets;
-      case 'savings':
-        return Icons.savings;
-      default:
-        return Icons.category_outlined;
-    }
   }
 
   // Opens custom category dialog when "Other..." is tapped
@@ -502,7 +476,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
-                                  _iconForKey(category.icon),
+                                  categoryIconFor(category.icon),
                                   color: Color(category.color),
                                   size: 20,
                                 ),
@@ -518,7 +492,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
                               onTap: () {
                                 setState(() {
                                   _selectedCategory = category.name;
-                                  _selectedCategoryIcon = _iconForKey(
+                                  _selectedCategoryIcon = categoryIconFor(
                                     category.icon,
                                   );
                                   _userPickedCategory = true;
