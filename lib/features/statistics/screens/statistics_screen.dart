@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/utils/formatters.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -83,34 +84,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         _selectedDate = picked;
       });
     }
-  }
-
-  // Helper formatting numbers with commas
-  String _formatAmount(double amount) {
-    final valueString = amount.toStringAsFixed(0);
-    return valueString.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-  }
-
-  // Formats date into "Month Year" pattern
-  String _getFormattedSelectedMonth() {
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return "${months[_selectedDate.month - 1]} ${_selectedDate.year}";
   }
 
   @override
@@ -273,7 +246,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        _getFormattedSelectedMonth(),
+                        formatMonthYear(_selectedDate),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

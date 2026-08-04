@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/category_service.dart';
@@ -177,40 +178,6 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
     if (text.isEmpty) return false;
     final amount = double.tryParse(text);
     return amount != null && amount > 0;
-  }
-
-  // Evaluates display date name dynamically
-  String _getFormattedDate() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final target = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-    );
-
-    if (target == today) {
-      return "Today";
-    } else if (target == yesterday) {
-      return "Yesterday";
-    } else {
-      final months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return "${_selectedDate.day} ${months[_selectedDate.month - 1]} ${_selectedDate.year}";
-    }
   }
 
   // Opens the system date picker dialog
@@ -889,7 +856,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _getFormattedDate(),
+                        formatRelativeDate(_selectedDate),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

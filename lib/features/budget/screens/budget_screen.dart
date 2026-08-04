@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/models/budget_model.dart';
 import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/services/budget_service.dart';
@@ -112,34 +113,6 @@ class _BudgetScreenState extends State<BudgetScreen>
   double get _overallProgressRatio =>
       _totalBudget > 0 ? _totalSpent / _totalBudget : 0.0;
   int get _overallProgressPercentage => (_overallProgressRatio * 100).toInt();
-
-  // Helper formatting numbers with commas
-  String _formatAmount(double amount) {
-    final valueString = amount.toStringAsFixed(0);
-    return valueString.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-  }
-
-  // Uppercase month label used in the overview card header
-  String get _monthLabel {
-    const months = [
-      'JANUARY',
-      'FEBRUARY',
-      'MARCH',
-      'APRIL',
-      'MAY',
-      'JUNE',
-      'JULY',
-      'AUGUST',
-      'SEPTEMBER',
-      'OCTOBER',
-      'NOVEMBER',
-      'DECEMBER',
-    ];
-    return months[_selectedMonth.month - 1];
-  }
 
   // Opens the date picker and updates only the displayed month and year
   Future<void> _showMonthPicker() async {
@@ -656,7 +629,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$_monthLabel ${_selectedMonth.year}',
+                    '${formatMonthLabel(_selectedMonth)} ${_selectedMonth.year}',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -725,7 +698,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                   ),
                 ),
                 Text(
-                  '₹${_formatAmount(_totalBudget)}',
+                  '₹${formatAmount(_totalBudget)}',
                   style: GoogleFonts.inter(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -752,7 +725,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₹${_formatAmount(_totalSpent)}',
+                      '₹${formatAmount(_totalSpent)}',
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         color: colorOnSurface,
@@ -782,7 +755,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₹${_formatAmount(_totalRemaining)}',
+                      '₹${formatAmount(_totalRemaining)}',
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         color: colorPrimary,
@@ -926,7 +899,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: '₹${_formatAmount(item.spentAmount)} ',
+                            text: '₹${formatAmount(item.spentAmount)} ',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -934,7 +907,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                             ),
                             children: [
                               TextSpan(
-                                text: '/ ₹${_formatAmount(item.budgetAmount)}',
+                                text: '/ ₹${formatAmount(item.budgetAmount)}',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.normal,

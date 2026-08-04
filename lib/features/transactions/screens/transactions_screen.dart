@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
@@ -132,25 +133,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     return groups;
   }
 
-  // Helper formatting numbers with commas
-  String _formatAmount(double amount) {
-    final valueString = amount.toStringAsFixed(0);
-    return valueString.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-  }
-
-  // Formats DateTime value into AM/PM string formats
-  String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour;
-    final minute = dateTime.minute;
-    final amPm = hour >= 12 ? 'PM' : 'AM';
-    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    final displayMinute = minute < 10 ? '0$minute' : '$minute';
-    return "$displayHour:$displayMinute $amPm";
-  }
-
   // Confirmation dialog before asynchronous document deletion
   void _showDeleteConfirmationDialog(
     BuildContext context,
@@ -172,7 +154,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
           ),
           content: Text(
-            'Are you sure you want to delete this transaction of ₹${_formatAmount(tx.amount)}?',
+            'Are you sure you want to delete this transaction of ₹${formatAmount(tx.amount)}?',
             style: GoogleFonts.inter(color: colorSecondary),
           ),
           actions: [
@@ -441,7 +423,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
               ),
               Text(
-                '₹${_formatAmount(_netBalance)}',
+                '₹${formatAmount(_netBalance)}',
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -460,7 +442,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
           ),
           Text(
-            '₹${_formatAmount(_netBalance)}',
+            '₹${formatAmount(_netBalance)}',
             style: GoogleFonts.inter(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -491,7 +473,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${_formatAmount(_totalIncome)}',
+                        '₹${formatAmount(_totalIncome)}',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -523,7 +505,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${_formatAmount(_totalExpenses)}',
+                        '₹${formatAmount(_totalExpenses)}',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -752,7 +734,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "${_formatTime(tx.date)}${tx.note != null ? ' • ${tx.note}' : ''}", // Maps exactly to date formatter
+                      "${formatTime(tx.date)}${tx.note != null ? ' • ${tx.note}' : ''}", // Maps exactly to date formatter
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
@@ -764,7 +746,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
               ),
               Text(
-                "$prefix₹${_formatAmount(tx.amount)}",
+                "$prefix₹${formatAmount(tx.amount)}",
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

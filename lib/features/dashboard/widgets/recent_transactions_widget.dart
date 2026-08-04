@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
@@ -22,15 +23,6 @@ class RecentTransactionsWidget extends StatelessWidget {
   final Color colorSecondary = const Color(0xFF565E74);
   final Color colorError = const Color(0xFFBA1A1A);
   final Color colorErrorContainer = const Color(0xFFFFDAD6);
-
-  // Helper formatting numbers with commas
-  String _formatAmount(double amount) {
-    final valueString = amount.toStringAsFixed(0);
-    return valueString.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +237,7 @@ class RecentTransactionsWidget extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "${isExpense ? '- ' : '+ '}₹${_formatAmount(tx.amount)}",
+                            "${isExpense ? '- ' : '+ '}₹${formatAmount(tx.amount)}",
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
