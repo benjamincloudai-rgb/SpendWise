@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/widgets/animated_press_card.dart';
+import 'package:spendwise/core/widgets/blur_blob.dart';
+import 'package:spendwise/core/widgets/entrance_animation.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -89,7 +92,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             Positioned(
               top: -100,
               right: -100,
-              child: _BlurBlob(
+              child: BlurBlob(
                 color: colorPrimaryFixed.withOpacity(0.1),
                 size: 500,
                 blur: 100,
@@ -98,7 +101,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             Positioned(
               bottom: -100,
               left: -100,
-              child: _BlurBlob(
+              child: BlurBlob(
                 color: colorSecondaryFixed.withOpacity(0.2),
                 size: 400,
                 blur: 80,
@@ -125,28 +128,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                         
                         // Condition layout showing Empty State or Segmented Cards
                         isOff
-                            ? _EntranceAnimation(
+                            ? EntranceAnimation(
                                 delayMs: 100,
                                 child: _buildEmptyState(),
                               )
                             : Column(
                                 children: [
-                                  _EntranceAnimation(
+                                  EntranceAnimation(
                                     delayMs: 100,
                                     child: _buildGeneralSection(),
                                   ),
                                   const SizedBox(height: 24),
-                                  _EntranceAnimation(
+                                  EntranceAnimation(
                                     delayMs: 180,
                                     child: _buildSecuritySection(),
                                   ),
                                   const SizedBox(height: 24),
-                                  _EntranceAnimation(
+                                  EntranceAnimation(
                                     delayMs: 240,
                                     child: _buildSmartInsightsSection(),
                                   ),
                                   const SizedBox(height: 24),
-                                  _EntranceAnimation(
+                                  EntranceAnimation(
                                     delayMs: 300,
                                     child: _buildPreferencesSection(),
                                   ),
@@ -164,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
               top: 0,
               left: 0,
               right: 0,
-              child: _EntranceAnimation(
+              child: EntranceAnimation(
                 delayMs: 50,
                 child: _buildHeader(context),
               ),
@@ -510,7 +513,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     required String value,
     required VoidCallback onTap,
   }) {
-    return _AnimatedPressCard(
+    return AnimatedPressCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -607,134 +610,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Background blur bubble element
-class _BlurBlob extends StatelessWidget {
-  final Color color;
-  final double size;
-  final double blur;
-
-  const _BlurBlob({
-    required this.color,
-    required this.size,
-    required this.blur,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: color, blurRadius: blur, spreadRadius: blur / 2),
-        ],
-      ),
-    );
-  }
-}
-
-// Zero-dependency staggered entrance animation widget
-class _EntranceAnimation extends StatefulWidget {
-  final Widget child;
-  final int delayMs;
-
-  const _EntranceAnimation({required this.child, this.delayMs = 0});
-
-  @override
-  State<_EntranceAnimation> createState() => _EntranceAnimationState();
-}
-
-class _EntranceAnimationState extends State<_EntranceAnimation> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 550),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad),
-    );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-
-    Future.delayed(Duration(milliseconds: widget.delayMs), () {
-      if (mounted) {
-        _controller.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(position: _slideAnimation, child: widget.child),
-    );
-  }
-}
-
-// Custom wrapper to add subtle scale and shadow elevation interactions on press
-class _AnimatedPressCard extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-
-  const _AnimatedPressCard({required this.child, required this.onTap});
-
-  @override
-  State<_AnimatedPressCard> createState() => _AnimatedPressCardState();
-}
-
-class _AnimatedPressCardState extends State<_AnimatedPressCard> with SingleTickerProviderStateMixin {
-  late AnimationController _pressController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(parent: _pressController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pressController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _pressController.forward(),
-      onTapUp: (_) => _pressController.reverse(),
-      onTapCancel: () => _pressController.reverse(),
-      onTap: widget.onTap,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
       ),
     );
   }

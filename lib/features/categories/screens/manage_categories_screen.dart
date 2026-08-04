@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/utils/aggregations.dart';
+import 'package:spendwise/core/widgets/animated_press_card.dart';
+import 'package:spendwise/core/widgets/blur_blob.dart';
+import 'package:spendwise/core/widgets/bottom_sheet_handle.dart';
+import 'package:spendwise/core/widgets/category_avatar.dart';
+import 'package:spendwise/core/widgets/entrance_animation.dart';
 
 import '../../../models/category_model.dart';
 import '../../../services/category_service.dart';
@@ -103,16 +109,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colorOutlineVariant.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
+                    BottomSheetHandle(),
                     const SizedBox(height: 24),
                     Text(
                       existing == null
@@ -269,7 +266,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                             color: selectedCardColor.toARGB32(),
                             type: type,
                             sortOrder: existing?.sortOrder ??
-                                _nextSortOrder(type),
+                                nextSortOrder(_categories, type),
                             createdAt: existing?.createdAt ?? DateTime.now(),
                           );
                           _saveCategory(category, isEditing: existing != null);
@@ -332,16 +329,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     }
   }
 
-  int _nextSortOrder(CategoryType type) {
-    final sortOrders = _categories
-        .where((c) => c.type == type)
-        .map((c) => c.sortOrder);
-    if (sortOrders.isEmpty) {
-      return 0;
-    }
-    return sortOrders.reduce((a, b) => a > b ? a : b) + 1;
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -356,7 +343,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
             Positioned(
               top: -100,
               right: -100,
-              child: _BlurBlob(
+              child: BlurBlob(
                 color: colorPrimaryFixed.withOpacity(0.1),
                 size: 500,
                 blur: 100,
@@ -365,7 +352,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
             Positioned(
               bottom: -100,
               left: -100,
-              child: _BlurBlob(
+              child: BlurBlob(
                 color: colorSecondaryFixed.withOpacity(0.2),
                 size: 400,
                 blur: 80,
@@ -390,7 +377,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                         const SizedBox(height: 20),
 
                         // Segmented Toggle
-                        _EntranceAnimation(
+                        EntranceAnimation(
                           delayMs: 100,
                           child: _buildSegmentedToggle(),
                         ),
@@ -403,7 +390,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                             _categories = snapshot.data ?? [];
 
                             if (snapshot.hasError) {
-                              return _EntranceAnimation(
+                              return EntranceAnimation(
                                 delayMs: 180,
                                 child: _buildEmptyState(),
                               );
@@ -431,11 +418,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                     .toList();
 
                             return activeList.isEmpty
-                                ? _EntranceAnimation(
+                                ? EntranceAnimation(
                                     delayMs: 180,
                                     child: _buildEmptyState(),
                                   )
-                                : _EntranceAnimation(
+                                : EntranceAnimation(
                                     delayMs: 180,
                                     child: ListView.separated(
                                       shrinkWrap: true,
@@ -465,7 +452,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               top: 0,
               left: 0,
               right: 0,
-              child: _EntranceAnimation(
+              child: EntranceAnimation(
                 delayMs: 50,
                 child: _buildHeader(context),
               ),
@@ -652,7 +639,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
 
   // Individual Category Card Widget with Premium Ripple and Press scale animation
   Widget _buildCategoryCard(CategoryModel item) {
-    return _AnimatedPressCard(
+    return AnimatedPressCard(
       onTap: () {
         _showAddCategorySheet(item);
       },
@@ -728,18 +715,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Color(item.color).withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                categoryIconFor(item.icon),
-                color: Color(item.color),
-                size: 24,
-              ),
+            CategoryAvatar(
+              icon: categoryIconFor(item.icon),
+              color: Color(item.color),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -835,137 +813,3 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   }
 }
 
-// Background blur bubble element
-class _BlurBlob extends StatelessWidget {
-  final Color color;
-  final double size;
-  final double blur;
-
-  const _BlurBlob({
-    required this.color,
-    required this.size,
-    required this.blur,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: color, blurRadius: blur, spreadRadius: blur / 2),
-        ],
-      ),
-    );
-  }
-}
-
-// Zero-dependency staggered entrance animation widget
-class _EntranceAnimation extends StatefulWidget {
-  final Widget child;
-  final int delayMs;
-
-  const _EntranceAnimation({required this.child, this.delayMs = 0});
-
-  @override
-  State<_EntranceAnimation> createState() => _EntranceAnimationState();
-}
-
-class _EntranceAnimationState extends State<_EntranceAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 550),
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad));
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.12),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-
-    Future.delayed(Duration(milliseconds: widget.delayMs), () {
-      if (mounted) {
-        _controller.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(position: _slideAnimation, child: widget.child),
-    );
-  }
-}
-
-// Custom wrapper to add subtle scale and shadow elevation interactions on press
-class _AnimatedPressCard extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-
-  const _AnimatedPressCard({
-    required this.child,
-    required this.onTap,
-    this.onLongPress,
-  });
-
-  @override
-  State<_AnimatedPressCard> createState() => _AnimatedPressCardState();
-}
-
-class _AnimatedPressCardState extends State<_AnimatedPressCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pressController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(parent: _pressController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pressController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _pressController.forward(),
-      onTapUp: (_) => _pressController.reverse(),
-      onTapCancel: () => _pressController.reverse(),
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
-    );
-  }
-}

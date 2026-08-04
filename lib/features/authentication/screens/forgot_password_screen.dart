@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -116,13 +117,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           Positioned(
             top: -100,
             right: -100,
-            child: _BlurBlob(
+            child: BlurBlob(
                 color: colorPrimaryFixed.withOpacity(0.1), size: 500, blur: 100),
           ),
           Positioned(
             bottom: -100,
             left: -100,
-            child: _BlurBlob(
+            child: BlurBlob(
                 color: colorSecondaryFixed.withOpacity(0.2), size: 400, blur: 80),
           ),
 
@@ -403,33 +404,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           ),
         ),
       ],
-    );
-  }
-}
-
-class _BlurBlob extends StatelessWidget {
-  final Color color;
-  final double size;
-  final double blur;
-
-  const _BlurBlob({required this.color, required this.size, required this.blur});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: color,
-            blurRadius: blur,
-            spreadRadius: blur / 2,
-          ),
-        ],
-      ),
     );
   }
 }

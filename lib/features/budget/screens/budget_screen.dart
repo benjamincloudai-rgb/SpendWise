@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/utils/formatters.dart';
+import 'package:spendwise/core/widgets/blur_blob.dart';
+import 'package:spendwise/core/widgets/bottom_sheet_handle.dart';
+import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/budget_model.dart';
 import 'package:spendwise/models/category_model.dart';
@@ -176,16 +179,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colorOutlineVariant.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
+                    BottomSheetHandle(),
                     const SizedBox(height: 24),
                     Text(
                       'Add Category Budget',
@@ -452,7 +446,7 @@ class _BudgetScreenState extends State<BudgetScreen>
             Positioned(
               top: -100,
               right: -100,
-              child: _BlurBlob(
+              child: BlurBlob(
                 color: colorPrimaryFixed.withOpacity(0.1),
                 size: 500,
                 blur: 100,
@@ -461,7 +455,7 @@ class _BudgetScreenState extends State<BudgetScreen>
             Positioned(
               bottom: -100,
               left: -100,
-              child: _BlurBlob(
+              child: BlurBlob(
                 color: colorSecondaryFixed.withOpacity(0.2),
                 size: 400,
                 blur: 80,
@@ -485,14 +479,14 @@ class _BudgetScreenState extends State<BudgetScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 16),
-                        _EntranceAnimation(
+                        EntranceAnimation(
                           delayMs: 100,
                           child: _buildOverviewCard(),
                         ),
                         const SizedBox(height: 28),
 
                         // Header text logic
-                        _EntranceAnimation(
+                        EntranceAnimation(
                           delayMs: 200,
                           child: _buildCategoryListHeader(),
                         ),
@@ -500,11 +494,11 @@ class _BudgetScreenState extends State<BudgetScreen>
 
                         // Empty State vs Populated Category Cards List
                         _visibleBudgets.isEmpty
-                            ? _EntranceAnimation(
+                            ? EntranceAnimation(
                                 delayMs: 250,
                                 child: _buildEmptyState(),
                               )
-                            : _EntranceAnimation(
+                            : EntranceAnimation(
                                 delayMs: 250,
                                 child: ListView.separated(
                                   shrinkWrap: true,
@@ -531,7 +525,7 @@ class _BudgetScreenState extends State<BudgetScreen>
               top: 0,
               left: 0,
               right: 0,
-              child: _EntranceAnimation(
+              child: EntranceAnimation(
                 delayMs: 50,
                 child: _buildHeader(context),
               ),
@@ -541,7 +535,7 @@ class _BudgetScreenState extends State<BudgetScreen>
             Positioned(
               right: screenWidth * 0.05,
               bottom: 32,
-              child: _EntranceAnimation(
+              child: EntranceAnimation(
                 delayMs: 400,
                 child: _buildFloatingActionButton(),
               ),
@@ -1063,85 +1057,3 @@ class _BudgetScreenState extends State<BudgetScreen>
   }
 }
 
-// Background blur bubble element
-class _BlurBlob extends StatelessWidget {
-  final Color color;
-  final double size;
-  final double blur;
-
-  const _BlurBlob({
-    required this.color,
-    required this.size,
-    required this.blur,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: color, blurRadius: blur, spreadRadius: blur / 2),
-        ],
-      ),
-    );
-  }
-}
-
-// Zero-dependency staggered entrance animation widget
-class _EntranceAnimation extends StatefulWidget {
-  final Widget child;
-  final int delayMs;
-
-  const _EntranceAnimation({required this.child, this.delayMs = 0});
-
-  @override
-  State<_EntranceAnimation> createState() => _EntranceAnimationState();
-}
-
-class _EntranceAnimationState extends State<_EntranceAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 550),
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad));
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.12),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-
-    Future.delayed(Duration(milliseconds: widget.delayMs), () {
-      if (mounted) {
-        _controller.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(position: _slideAnimation, child: widget.child),
-    );
-  }
-}
