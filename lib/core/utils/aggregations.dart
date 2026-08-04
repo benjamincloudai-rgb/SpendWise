@@ -27,6 +27,14 @@ double netBalance(List<TransactionModel> transactions) {
   return sumIncome(transactions) - sumExpense(transactions);
 }
 
+/// Computes the savings rate ([savings] as a percentage of [income]).
+///
+/// Returns 0.0 when [income] is zero or negative to avoid a division-by-zero.
+double savingsRate(double savings, double income) {
+  if (income <= 0) return 0.0;
+  return (savings / income) * 100;
+}
+
 /// Returns the next sort order for a new [CategoryModel] of the given [type].
 ///
 /// Matches the previous `_nextSortOrder` implementations.
