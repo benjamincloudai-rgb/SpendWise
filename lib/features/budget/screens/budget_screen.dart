@@ -1,21 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// --- BUDGET CATEGORY DATA MODEL ---
-class BudgetCategoryModel {
-  final String categoryName;
-  final double budgetAmount;
-  final double spentAmount;
-
-  BudgetCategoryModel({
-    required this.categoryName,
-    required this.budgetAmount,
-    required this.spentAmount,
-  });
-
-  double get ratio => budgetAmount > 0 ? spentAmount / budgetAmount : 0.0;
-  int get percentage => (ratio * 100).toInt();
-}
+import 'package:spendwise/models/budget_model.dart';
+import 'package:spendwise/models/category_model.dart';
+import 'package:spendwise/services/budget_service.dart';
+import 'package:spendwise/services/category_service.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -28,7 +18,17 @@ class _BudgetScreenState extends State<BudgetScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
   DateTime _selectedMonth = DateTime.now(); // Selected month shown in overview
-  final List<BudgetCategoryModel> _budgets = []; // Initializes completely empty
+
+  // Budget data loaded live from Firestore
+  final BudgetService _budgetService = BudgetService();
+  late final Stream<List<BudgetModel>> _budgetsStream;
+  StreamSubscription<List<BudgetModel>>? _budgetSub;
+  List<BudgetModel> _budgets = [];
+
+  // Budgets for the currently selected month
+  List<BudgetModel> get _visibleBudgets => _budgets
+      .where((b) => b.period == _selectedMonth.year * 100 + _selectedMonth.month)
+      .toList();
 
   // Strict colors matching the SpendWise design system
   final Color colorPrimary = const Color(0xFF006E2F);
@@ -48,18 +48,15 @@ class _BudgetScreenState extends State<BudgetScreen>
   final Color colorError = const Color(0xFFBA1A1A);
   final Color colorErrorContainer = const Color(0xFFFFDAD6);
 
-  // Predefined Categories list as required
-  final List<String> _categoryOptions = [
-    'Food',
-    'Shopping',
-    'Transport',
-    'Bills',
-    'Entertainment',
-    'Healthcare',
-    'Education',
-    'Rent',
-    'Others',
-  ];
+  // Category data loaded live from Firestore
+  final CategoryService _categoryService = CategoryService();
+  late final Stream<List<CategoryModel>> _categoriesStream;
+  StreamSubscription<List<CategoryModel>>? _categorySub;
+  List<CategoryModel> _categories = [];
+
+  // Expense-only categories available for the budget picker
+  List<CategoryModel> get _visibleCategories =>
+      _categories.where((c) => c.type == CategoryType.expense).toList();
 
   @override
   void initState() {
@@ -68,18 +65,49 @@ class _BudgetScreenState extends State<BudgetScreen>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
+
+    _categoriesStream = _categoryService.getCategories();
+    _categorySub = _categoriesStream.listen(
+      (categories) {
+        if (mounted) {
+          setState(() {
+            _categories = categories;
+          });
+        }
+      },
+      onError: (Object error) {
+        debugPrint('Failed to load categories: $error');
+      },
+    );
+
+    _budgetsStream = _budgetService.getBudgets();
+    _budgetSub = _budgetsStream.listen(
+      (budgets) {
+        if (mounted) {
+          setState(() {
+            _budgets = budgets;
+          });
+        }
+      },
+      onError: (Object error) {
+        debugPrint('Failed to load budgets: $error');
+      },
+    );
   }
 
   @override
   void dispose() {
+    _budgetSub?.cancel();
+    _categorySub?.cancel();
     _floatController.dispose();
     super.dispose();
   }
 
   // Reactive computed overview metrics
   double get _totalBudget =>
-      _budgets.fold(0.0, (sum, b) => sum + b.budgetAmount);
-  double get _totalSpent => _budgets.fold(0.0, (sum, b) => sum + b.spentAmount);
+      _visibleBudgets.fold(0.0, (sum, b) => sum + b.budgetAmount);
+  double get _totalSpent =>
+      _visibleBudgets.fold(0.0, (sum, b) => sum + b.spentAmount);
   double get _totalRemaining => _totalBudget - _totalSpent;
   double get _overallProgressRatio =>
       _totalBudget > 0 ? _totalSpent / _totalBudget : 0.0;
@@ -142,11 +170,15 @@ class _BudgetScreenState extends State<BudgetScreen>
 
   // Opens category modal sheet selector to add a budget
   void _showAddBudgetSheet() {
-    String selectedCategory = _categoryOptions.first;
+    final expenseNames =
+        _visibleCategories.map((c) => c.name).toList();
+    // Safe default: first expense category, or the custom "Others" entry
+    String selectedCategory =
+        expenseNames.isNotEmpty ? expenseNames.first : 'Others';
     final textControllerCategory = TextEditingController();
     final budgetAmountController = TextEditingController();
     final spentAmountController = TextEditingController();
-    bool isCustomCategory = false;
+    bool isCustomCategory = expenseNames.isEmpty;
 
     showModalBottomSheet(
       context: context,
@@ -212,15 +244,28 @@ class _BudgetScreenState extends State<BudgetScreen>
                           value: isCustomCategory ? 'Others' : selectedCategory,
                           isExpanded: true,
                           dropdownColor: colorSurfaceContainerLowest,
-                          items: _categoryOptions.map((String cat) {
-                            return DropdownMenuItem<String>(
-                              value: cat,
+                          items: [
+                            ..._visibleCategories.map((CategoryModel cat) {
+                              return DropdownMenuItem<String>(
+                                value: cat.name,
+                                child: Text(
+                                  cat.name,
+                                  style: GoogleFonts.inter(
+                                    color: colorOnSurface,
+                                  ),
+                                ),
+                              );
+                            }),
+                            DropdownMenuItem<String>(
+                              value: 'Others',
                               child: Text(
-                                cat,
-                                style: GoogleFonts.inter(color: colorOnSurface),
+                                'Others',
+                                style: GoogleFonts.inter(
+                                  color: colorOnSurface,
+                                ),
                               ),
-                            );
-                          }).toList(),
+                            ),
+                          ],
                           onChanged: (val) {
                             setModalState(() {
                               if (val == 'Others') {
@@ -329,7 +374,7 @@ class _BudgetScreenState extends State<BudgetScreen>
 
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         final limitText = budgetAmountController.text.trim();
                         final spentText = spentAmountController.text.trim();
                         final limit = double.tryParse(limitText) ?? 0.0;
@@ -340,16 +385,47 @@ class _BudgetScreenState extends State<BudgetScreen>
                             : selectedCategory;
 
                         if (finalCategoryName.isNotEmpty && limit > 0) {
-                          setState(() {
-                            _budgets.add(
-                              BudgetCategoryModel(
-                                categoryName: finalCategoryName,
-                                budgetAmount: limit,
-                                spentAmount: spent,
+                          final period = _selectedMonth.year * 100 +
+                              _selectedMonth.month;
+                          final alreadyBudgeted = _visibleBudgets.any((b) =>
+                              b.categoryName.trim().toLowerCase() ==
+                              finalCategoryName.trim().toLowerCase());
+
+                          if (alreadyBudgeted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'A budget for this category already exists for this month.',
+                                ),
                               ),
                             );
-                          });
-                          Navigator.pop(context);
+                          } else {
+                            try {
+                              await _budgetService.addBudget(
+                                BudgetModel(
+                                  id: '',
+                                  categoryName: finalCategoryName,
+                                  budgetAmount: limit,
+                                  spentAmount: spent,
+                                  period: period,
+                                  createdAt: DateTime.now(),
+                                ),
+                              );
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            } catch (e, stackTrace) {
+                              debugPrint('===== BUDGET SAVE ERROR =====');
+                              debugPrint(e.toString());
+                              debugPrint(stackTrace.toString());
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
+                              }
+                            }
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -449,7 +525,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                         const SizedBox(height: 16),
 
                         // Empty State vs Populated Category Cards List
-                        _budgets.isEmpty
+                        _visibleBudgets.isEmpty
                             ? _EntranceAnimation(
                                 delayMs: 250,
                                 child: _buildEmptyState(),
@@ -459,11 +535,13 @@ class _BudgetScreenState extends State<BudgetScreen>
                                 child: ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _budgets.length,
+                                  itemCount: _visibleBudgets.length,
                                   separatorBuilder: (context, index) =>
                                       const SizedBox(height: 16),
                                   itemBuilder: (context, index) {
-                                    return _buildCategoryCard(_budgets[index]);
+                                    return _buildCategoryCard(
+                                      _visibleBudgets[index],
+                                    );
                                   },
                                 ),
                               ),
@@ -740,8 +818,17 @@ class _BudgetScreenState extends State<BudgetScreen>
   }
 
   // Individual category metrics card
-  Widget _buildCategoryCard(BudgetCategoryModel item) {
-    final style = _getCategoryStyle(item.categoryName);
+  Widget _buildCategoryCard(BudgetModel item) {
+    // Resolve the real Firestore category style where possible;
+    // fall back to keyword styling for legacy or deleted categories.
+    final categoryMatch = _findCategory(item.categoryName);
+    final style = categoryMatch != null
+        ? _CategoryStyle(
+            _iconForKey(categoryMatch.icon),
+            Color(categoryMatch.color),
+            Color(categoryMatch.color).withOpacity(0.15),
+          )
+        : _getCategoryStyle(item.categoryName);
 
     // Dynamic styling based on spent vs budget limits
     Color barColor = colorPrimary;
@@ -989,6 +1076,44 @@ class _BudgetScreenState extends State<BudgetScreen>
         ),
       ),
     );
+  }
+
+  // Looks up a Firestore category by name (nullable to support fallback)
+  CategoryModel? _findCategory(String name) {
+    for (final category in _visibleCategories) {
+      if (category.name == name) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  // Maps stored icon key strings to their Material icon
+  IconData _iconForKey(String key) {
+    switch (key) {
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'directions_car':
+        return Icons.directions_car;
+      case 'movie':
+        return Icons.movie;
+      case 'local_hospital':
+        return Icons.local_hospital;
+      case 'home':
+        return Icons.home;
+      case 'school':
+        return Icons.school;
+      case 'flight':
+        return Icons.flight;
+      case 'pets':
+        return Icons.pets;
+      case 'savings':
+        return Icons.savings;
+      default:
+        return Icons.category_outlined;
+    }
   }
 
   // Predefined style categorizer config mapper

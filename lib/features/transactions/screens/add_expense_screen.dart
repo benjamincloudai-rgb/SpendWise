@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/models/transaction_model.dart';
+import 'package:spendwise/services/category_service.dart';
 import 'package:spendwise/services/transaction_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -25,6 +28,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   String _selectedCategory = '🛒 Shopping';
   IconData _selectedCategoryIcon = Icons.shopping_bag;
   DateTime _selectedDate = DateTime.now();
+  bool _userPickedCategory = false;
+
+  // Category data from Firestore
+  final CategoryService _categoryService = CategoryService();
+  late final Stream<List<CategoryModel>> _categoriesStream;
+  StreamSubscription<List<CategoryModel>>? _categorySub;
+  List<CategoryModel> _categories = [];
+  bool _categoriesLoading = true;
+  bool _categoriesLoadFailed = false;
+  bool _categoryStateInitialized = false;
 
   // Theme colors consistent with the SpendWise dashboard
   final Color colorPrimary = const Color(0xFF006E2F);
@@ -42,38 +55,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   final Color colorSecondary = const Color(0xFF565E74);
   final Color colorTertiary = const Color(0xFF505F76);
   final Color colorOutline = const Color(0xFF6D7B6C);
-
-  // Categories list mapped with Material Icons and custom colors
-  final List<_CategoryItem> _categories = [
-    _CategoryItem('🍔 Food & Dining', Icons.restaurant, color: Colors.orange),
-    _CategoryItem('🛒 Shopping', Icons.shopping_bag, color: Colors.blue),
-    _CategoryItem('🚗 Transport', Icons.directions_car, color: Colors.teal),
-    _CategoryItem('⛽ Fuel', Icons.local_gas_station, color: Colors.indigo),
-    _CategoryItem(
-      '🏠 Bills & Utilities',
-      Icons.electrical_services,
-      color: Colors.red,
-    ),
-    _CategoryItem('🎬 Entertainment', Icons.movie, color: Colors.purple),
-    _CategoryItem('🏥 Medical', Icons.local_hospital, color: Colors.green),
-    _CategoryItem('🎓 Education', Icons.school, color: Colors.brown),
-    _CategoryItem('✈ Travel', Icons.flight, color: Colors.cyan),
-    _CategoryItem('💼 Work', Icons.work, color: Colors.amber),
-    _CategoryItem('🎁 Gifts', Icons.card_giftcard, color: Colors.pink),
-    _CategoryItem(
-      '📱 Subscriptions',
-      Icons.subscriptions,
-      color: Colors.deepPurple,
-    ),
-    _CategoryItem('💳 EMI / Loans', Icons.credit_card, color: Colors.blueGrey),
-    _CategoryItem(
-      '💰 Investments',
-      Icons.trending_up,
-      color: Colors.lightGreen,
-    ),
-    _CategoryItem('❤️ Family', Icons.favorite, color: Colors.pinkAccent),
-    _CategoryItem('🐶 Pets', Icons.pets, color: Colors.orangeAccent),
-  ];
 
   Future<void> _saveExpense() async {
     try {
@@ -144,14 +125,34 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
       _notesController.text = tx.note ?? '';
       _selectedCategory = tx.categoryId;
       _selectedDate = tx.date;
-
-      // Find the corresponding custom category icon dynamically
-      final matchedItem = _categories.firstWhere(
-        (cat) => cat.name == _selectedCategory,
-        orElse: () => _CategoryItem('🛒 Shopping', Icons.shopping_bag),
-      );
-      _selectedCategoryIcon = matchedItem.icon;
+      _selectedCategoryIcon = Icons.shopping_bag;
     }
+
+    _categoriesStream = _categoryService.getCategories();
+    _categorySub = _categoriesStream.listen(
+      (list) {
+        if (!mounted) return;
+        setState(() {
+          _categories = list;
+          _categoriesLoading = false;
+          if (!_categoryStateInitialized) {
+            _categoryStateInitialized = true;
+            if (widget.transaction != null) {
+              _resolveEditCategoryIcon();
+            } else if (!_userPickedCategory) {
+              _applyFirstCategory();
+            }
+          }
+        });
+      },
+      onError: (Object error) {
+        if (!mounted) return;
+        setState(() {
+          _categoriesLoading = false;
+          _categoriesLoadFailed = true;
+        });
+      },
+    );
 
     _amountController.addListener(_onAmountChanged);
   }
@@ -162,6 +163,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
 
   @override
   void dispose() {
+    _categorySub?.cancel();
     _floatController.dispose();
     _amountController.dispose();
     _notesController.dispose();
@@ -241,6 +243,64 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
     }
   }
 
+  // Resolves the icon for the currently selected category (edit pre-fill)
+  void _resolveEditCategoryIcon() {
+    for (final category in _visibleCategories) {
+      if (category.name == _selectedCategory) {
+        _selectedCategoryIcon = _iconForKey(category.icon);
+        return;
+      }
+    }
+  }
+
+  // Applies the first available category when a new entry is created
+  void _applyFirstCategory() {
+    if (_visibleCategories.isEmpty) return;
+    final first = _visibleCategories.first;
+    _selectedCategory = first.name;
+    _selectedCategoryIcon = _iconForKey(first.icon);
+  }
+
+  // Expense-only categories from the Firestore stream
+  List<CategoryModel> get _visibleCategories =>
+      _categories.where((c) => c.type == CategoryType.expense).toList();
+
+  // Next sort order = max existing sortOrder for the type + 1
+  int _nextSortOrder(CategoryType type) {
+    final sortOrders = _categories
+        .where((c) => c.type == type)
+        .map((c) => c.sortOrder);
+    if (sortOrders.isEmpty) return 0;
+    return sortOrders.reduce((a, b) => a > b ? a : b) + 1;
+  }
+
+  IconData _iconForKey(String key) {
+    switch (key) {
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'directions_car':
+        return Icons.directions_car;
+      case 'movie':
+        return Icons.movie;
+      case 'local_hospital':
+        return Icons.local_hospital;
+      case 'home':
+        return Icons.home;
+      case 'school':
+        return Icons.school;
+      case 'flight':
+        return Icons.flight;
+      case 'pets':
+        return Icons.pets;
+      case 'savings':
+        return Icons.savings;
+      default:
+        return Icons.category_outlined;
+    }
+  }
+
   // Opens custom category dialog when "Other..." is tapped
   void _showCustomCategoryDialog() {
     final textController = TextEditingController();
@@ -283,15 +343,40 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
               ),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 final customName = textController.text.trim();
-                if (customName.isNotEmpty) {
+                if (customName.isEmpty) {
+                  Navigator.pop(context);
+                  return;
+                }
+                final messenger = ScaffoldMessenger.of(context);
+                final category = CategoryModel(
+                  id: '',
+                  name: customName,
+                  icon: 'category',
+                  color: colorPrimary.toARGB32(),
+                  type: CategoryType.expense,
+                  sortOrder: _nextSortOrder(CategoryType.expense),
+                  createdAt: DateTime.now(),
+                );
+                try {
+                  await _categoryService.addCategory(category);
+                } catch (_) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to create category'),
+                    ),
+                  );
+                }
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                if (mounted) {
                   setState(() {
-                    _selectedCategory = '➕ $customName';
+                    _selectedCategory = customName;
                     _selectedCategoryIcon = Icons.category_outlined;
+                    _userPickedCategory = true;
                   });
                 }
-                Navigator.pop(context);
               },
               child: Text(
                 'Add',
@@ -345,83 +430,139 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _categories.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == _categories.length) {
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
+                  child: Column(
+                    children: [
+                      if (_categoriesLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_categoriesLoadFailed)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 24,
-                            vertical: 4,
+                            vertical: 16,
                           ),
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: colorSecondary.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              color: colorSecondary,
-                              size: 22,
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: colorSecondary,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Couldn\'t load categories. Use "Other..." to create one.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: colorSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          title: Text(
-                            'Other...',
+                        )
+                      else if (_visibleCategories.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          child: Text(
+                            'No categories yet. Use "Other..." to create one.',
                             style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: colorOnSurface,
+                              fontSize: 13,
+                              color: colorSecondary,
                             ),
                           ),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showCustomCategoryDialog();
-                          },
-                        );
-                      }
+                        ),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: _visibleCategories.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == _visibleCategories.length) {
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 4,
+                                ),
+                                leading: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: colorSecondary.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    color: colorSecondary,
+                                    size: 22,
+                                  ),
+                                ),
+                                title: Text(
+                                  'Other...',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorOnSurface,
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _showCustomCategoryDialog();
+                                },
+                              );
+                            }
 
-                      final category = _categories[index];
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 4,
+                            final category = _visibleCategories[index];
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 4,
+                              ),
+                              leading: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Color(category.color).withOpacity(
+                                    0.1,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _iconForKey(category.icon),
+                                  color: Color(category.color),
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                category.name,
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorOnSurface,
+                                ),
+                              ),
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategory = category.name;
+                                  _selectedCategoryIcon = _iconForKey(
+                                    category.icon,
+                                  );
+                                  _userPickedCategory = true;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
                         ),
-                        leading: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: (category.color ?? colorPrimary).withOpacity(
-                              0.1,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            category.icon,
-                            color: category.color ?? colorPrimary,
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(
-                          category.name,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: colorOnSurface,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory = category.name;
-                            _selectedCategoryIcon = category.icon;
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -971,11 +1112,3 @@ class _EntranceAnimationState extends State<_EntranceAnimation>
   }
 }
 
-// Category Item internal mapping configuration class
-class _CategoryItem {
-  final String name;
-  final IconData icon;
-  final Color? color;
-
-  _CategoryItem(this.name, this.icon, {this.color});
-}
