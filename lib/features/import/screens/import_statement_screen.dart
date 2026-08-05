@@ -3,18 +3,46 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
+import 'package:spendwise/features/import/screens/import_preview_screen.dart';
+import 'package:spendwise/features/import/services/statement_import_service.dart';
 
-/// Placeholder entry point for the Bank Statement Import feature.
+/// Entry point for the Bank Statement Import feature.
 ///
-/// Phase 6A: pure UI. No file picker, parsing, services, models, or backend
-/// logic yet. Both file type cards surface a "Coming in Phase 6B" SnackBar.
+/// Phase 6B: tapping "Import CSV" opens the native file picker, parses the
+/// selected file generically, and opens the preview screen. Excel is not yet
+/// implemented and surfaces a "coming soon" SnackBar.
 class ImportStatementScreen extends StatelessWidget {
-  const ImportStatementScreen({super.key});
+  ImportStatementScreen({super.key});
 
-  void _showComingSoon(BuildContext context) {
+  final StatementImportService _statementImportService =
+      StatementImportService();
+
+  void _showExcelComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Coming in Phase 6B')));
+      ..showSnackBar(const SnackBar(content: Text('Excel import coming soon')));
+  }
+
+  Future<void> _handleImportCsv(BuildContext context) async {
+    final result = await _statementImportService.importCsv();
+
+    if (!context.mounted) return;
+
+    if (result.cancelled) return;
+
+    if (result.error != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(result.error!)));
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ImportPreviewScreen(rows: result.rows),
+      ),
+    );
   }
 
   @override
@@ -87,7 +115,7 @@ class ImportStatementScreen extends StatelessWidget {
                             iconBgColor: colorPrimaryContainer.withValues(
                               alpha: 0.1,
                             ),
-                            onTap: () => _showComingSoon(context),
+                            onTap: () => _handleImportCsv(context),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -102,7 +130,7 @@ class ImportStatementScreen extends StatelessWidget {
                             iconBgColor: colorSecondaryFixed.withValues(
                               alpha: 0.3,
                             ),
-                            onTap: () => _showComingSoon(context),
+                            onTap: () => _showExcelComingSoon(context),
                           ),
                         ),
                       ],

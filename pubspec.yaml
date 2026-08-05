@@ -61,6 +61,8 @@ dependencies:
   equatable: ^2.0.7
   flutter_native_splash: ^2.4.8
   flutter_launcher_icons: ^0.14.4
+  file_picker: ^11.0.3
+  csv: ^8.0.0
 
 dev_dependencies:
   flutter_test:
