@@ -613,21 +613,21 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        _trendCaption(selectedPoint),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colorOnSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
                         '₹${formatAmount(selectedPoint.amount)}',
                         style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: colorOnSurface,
                           letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _trendCaption(selectedPoint),
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: colorOnSurfaceVariant,
                         ),
                       ),
                     ],
@@ -1052,7 +1052,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 crossAxisCount: 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 3.5,
+                childAspectRatio: 3.2,
                 children: breakdown.isEmpty
                     ? [
                         _buildLegendTile('Food', colorPrimary.withOpacity(0.2), 0.0),
@@ -1078,32 +1078,43 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   Widget _buildLegendTile(String name, Color dotColor, double percentage) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 14, color: colorOnSurfaceVariant),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '${percentage.toStringAsFixed(0)}%',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: colorOnSurface,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: colorOnSurfaceVariant,
+              ),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '${percentage.toStringAsFixed(0)}%',
+              textAlign: TextAlign.end,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: colorOnSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1143,13 +1154,23 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             ],
           ),
           child: SizedBox(
-            height: 140,
+            height: 176,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildComparisonColumn('Income', incomeRatio),
-                _buildComparisonColumn('Expenses', expenseRatio),
+                _buildComparisonColumn(
+                  label: 'Income',
+                  amount: '₹${formatAmount(income)}',
+                  ratio: incomeRatio,
+                  color: colorPrimary,
+                ),
+                _buildComparisonColumn(
+                  label: 'Expenses',
+                  amount: '₹${formatAmount(expense)}',
+                  ratio: expenseRatio,
+                  color: colorTertiary,
+                ),
               ],
             ),
           ),
@@ -1158,26 +1179,51 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-  Widget _buildComparisonColumn(String label, double ratio) {
+  Widget _buildComparisonColumn({
+    required String label,
+    required String amount,
+    required double ratio,
+    required Color color,
+  }) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        Text(
+          amount,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: colorOnSurface,
+          ),
+        ),
+        const SizedBox(height: 10),
         Container(
           width: 64,
           height: 100 * ratio.clamp(0.04, 1.0), // Min indicator height of 4px
           decoration: BoxDecoration(
-            color: colorSurfaceContainer,
+            color: color,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: colorOnSurfaceVariant,
-          ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colorOnSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1306,11 +1352,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   title,
                   style: GoogleFonts.inter(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: colorOnSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   count,
                   style: GoogleFonts.inter(
@@ -1327,17 +1373,28 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               Text(
                 amount,
                 style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
                   color: colorOnSurface,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                percentage,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: colorOnSurfaceVariant,
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: colorSurfaceContainer,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  percentage,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: colorOnSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -1388,7 +1445,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           const SizedBox(height: 12),
           if (!hasData)
             Text(
-              'No spending insights yet. Start adding expenses to unlock personalized insights.',
+              'No transactions found for this month. Add or import transactions to see your statistics.',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: colorOnSurfaceVariant,
@@ -1460,16 +1517,22 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
   Widget _buildInsightRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: colorPrimary, size: 18),
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: Icon(icon, color: colorPrimary, size: 18),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
                 color: colorOnSurfaceVariant,
               ),
             ),
