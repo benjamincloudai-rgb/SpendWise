@@ -7,11 +7,14 @@ import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/bottom_sheet_handle.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
+import 'package:spendwise/features/budget/domain/budget_spend_calculator.dart';
 import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/budget_model.dart';
 import 'package:spendwise/models/category_model.dart';
+import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/budget_service.dart';
 import 'package:spendwise/services/category_service.dart';
+import 'package:spendwise/services/transaction_service.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -30,6 +33,13 @@ class _BudgetScreenState extends State<BudgetScreen>
   late final Stream<List<BudgetModel>> _budgetsStream;
   StreamSubscription<List<BudgetModel>>? _budgetSub;
   List<BudgetModel> _budgets = [];
+
+  // Transactions loaded live so spent is always computed from real data
+  final TransactionService _transactionService = TransactionService();
+  final BudgetSpendCalculator _spendCalculator = BudgetSpendCalculator();
+  late final Stream<List<TransactionModel>> _transactionsStream;
+  StreamSubscription<List<TransactionModel>>? _transactionsSub;
+  List<TransactionModel> _allTransactions = [];
 
   // Budgets for the currently selected month
   List<BudgetModel> get _visibleBudgets => _budgets
@@ -99,11 +109,26 @@ class _BudgetScreenState extends State<BudgetScreen>
         debugPrint('Failed to load budgets: $error');
       },
     );
+
+    _transactionsStream = _transactionService.getTransactions();
+    _transactionsSub = _transactionsStream.listen(
+      (transactions) {
+        if (mounted) {
+          setState(() {
+            _allTransactions = transactions;
+          });
+        }
+      },
+      onError: (Object error) {
+        debugPrint('Failed to load transactions: $error');
+      },
+    );
   }
 
   @override
   void dispose() {
     _budgetSub?.cancel();
+    _transactionsSub?.cancel();
     _categorySub?.cancel();
     _floatController.dispose();
     super.dispose();
@@ -113,7 +138,7 @@ class _BudgetScreenState extends State<BudgetScreen>
   double get _totalBudget =>
       _visibleBudgets.fold(0.0, (sum, b) => sum + b.budgetAmount);
   double get _totalSpent =>
-      _visibleBudgets.fold(0.0, (sum, b) => sum + b.spentAmount);
+      _spendCalculator.totalSpent(_visibleBudgets, _allTransactions);
   double get _totalRemaining => _totalBudget - _totalSpent;
   double get _overallProgressRatio =>
       _totalBudget > 0 ? _totalSpent / _totalBudget : 0.0;
@@ -155,7 +180,6 @@ class _BudgetScreenState extends State<BudgetScreen>
         expenseNames.isNotEmpty ? expenseNames.first : 'Others';
     final textControllerCategory = TextEditingController();
     final budgetAmountController = TextEditingController();
-    final spentAmountController = TextEditingController();
     bool isCustomCategory = expenseNames.isEmpty;
 
     showModalBottomSheet(
@@ -188,6 +212,15 @@ class _BudgetScreenState extends State<BudgetScreen>
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: colorOnSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Budget for ${formatMonthLabel(_selectedMonth)} ${_selectedMonth.year}',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: colorSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -310,44 +343,11 @@ class _BudgetScreenState extends State<BudgetScreen>
                       style: GoogleFonts.inter(color: colorOnSurface),
                     ),
 
-                    const SizedBox(height: 16),
-                    Text(
-                      'Current Spent Amount (₹) - Optional',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: colorSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: spentAmountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '0.00',
-                        hintStyle: GoogleFonts.inter(
-                          color: colorOutlineVariant,
-                          fontSize: 14,
-                        ),
-                        filled: true,
-                        fillColor: colorSurfaceContainerLow,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      style: GoogleFonts.inter(color: colorOnSurface),
-                    ),
-
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () async {
                         final limitText = budgetAmountController.text.trim();
-                        final spentText = spentAmountController.text.trim();
                         final limit = double.tryParse(limitText) ?? 0.0;
-                        final spent = double.tryParse(spentText) ?? 0.0;
 
                         final finalCategoryName = isCustomCategory
                             ? textControllerCategory.text.trim()
@@ -375,7 +375,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                                   id: '',
                                   categoryName: finalCategoryName,
                                   budgetAmount: limit,
-                                  spentAmount: spent,
+                                  spentAmount: 0.0,
                                   period: period,
                                   createdAt: DateTime.now(),
                                 ),
@@ -788,6 +788,12 @@ class _BudgetScreenState extends State<BudgetScreen>
 
   // Individual category metrics card
   Widget _buildCategoryCard(BudgetModel item) {
+    // Spent is always computed from the user's transactions; the stored
+    // spentAmount is a legacy field and is not used for UI calculations.
+    final spent = _spendCalculator.spentFor(item, _allTransactions);
+    final ratio = item.budgetAmount > 0 ? spent / item.budgetAmount : 0.0;
+    final percentage = (ratio * 100).toInt();
+
     // Resolve the real Firestore category style where possible;
     // fall back to keyword styling for legacy or deleted categories.
     final categoryMatch = _findCategory(item.categoryName);
@@ -803,7 +809,7 @@ class _BudgetScreenState extends State<BudgetScreen>
     Color barColor = colorPrimary;
     Widget? stateBadge;
 
-    if (item.ratio >= 1.0) {
+    if (ratio >= 1.0) {
       barColor = colorError;
       stateBadge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -820,7 +826,7 @@ class _BudgetScreenState extends State<BudgetScreen>
           ),
         ),
       );
-    } else if (item.ratio >= 0.8) {
+    } else if (ratio >= 0.8) {
       barColor = Colors.orange.shade700;
       stateBadge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -845,7 +851,7 @@ class _BudgetScreenState extends State<BudgetScreen>
         color: colorSurfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: item.ratio >= 1.0
+          color: ratio >= 1.0
               ? colorError.withOpacity(0.2)
               : colorSurfaceContainerLow,
         ),
@@ -895,7 +901,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: '₹${formatAmount(item.spentAmount)} ',
+                            text: '₹${formatAmount(spent)} ',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -914,7 +920,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                           ),
                         ),
                         Text(
-                          '${item.percentage}%',
+                          '$percentage%',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -932,7 +938,7 @@ class _BudgetScreenState extends State<BudgetScreen>
           ClipRRect(
             borderRadius: BorderRadius.circular(100),
             child: LinearProgressIndicator(
-              value: item.ratio.clamp(0.0, 1.0),
+              value: ratio.clamp(0.0, 1.0),
               minHeight: 8,
               backgroundColor: colorSurfaceContainerLow,
               valueColor: AlwaysStoppedAnimation<Color>(barColor),
