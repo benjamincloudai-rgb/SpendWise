@@ -8,16 +8,122 @@ import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/features/import/domain/statement_row_info.dart';
 import 'package:spendwise/features/import/domain/transaction_type.dart';
+import 'package:spendwise/features/import/services/statement_import_committer.dart';
 
 /// Preview of the rows parsed and classified from a statement file.
 ///
 /// Phase 6C: each card shows the inferred merchant, category, transaction
-/// type and amount alongside the raw date. Nothing is formatted from the raw
-/// strings themselves and nothing is saved to Firestore.
-class ImportPreviewScreen extends StatelessWidget {
+/// type and amount alongside the raw date. Phase 6D: tapping "Import" writes
+/// the rows to Firestore through [StatementImportCommitter], skipping
+/// duplicates, and pops back to the dashboard after confirmation.
+class ImportPreviewScreen extends StatefulWidget {
   final List<StatementRowInfo> rows;
 
   const ImportPreviewScreen({super.key, required this.rows});
+
+  @override
+  State<ImportPreviewScreen> createState() => _ImportPreviewScreenState();
+}
+
+class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
+  final StatementImportCommitter _committer = StatementImportCommitter();
+  bool _importing = false;
+
+  Future<void> _handleImport() async {
+    setState(() => _importing = true);
+
+    try {
+      final outcome = await _committer.commit(widget.rows);
+      if (!mounted) return;
+
+      setState(() => _importing = false);
+      await _showSuccessDialog(outcome);
+      if (!mounted) return;
+
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() => _importing = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Import failed. Please try again.')),
+        );
+    }
+  }
+
+  Future<void> _showSuccessDialog(StatementImportOutcome outcome) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Imported Successfully',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.onSurface,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${outcome.imported} imported',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.loop, color: AppColors.secondary, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${outcome.duplicates} duplicates skipped',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'OK',
+                style: GoogleFonts.inter(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +163,7 @@ class ImportPreviewScreen extends StatelessWidget {
                   left: screenWidth * 0.05,
                   right: screenWidth * 0.05,
                   top: 92, // Clears sticky top header
-                  bottom: 32,
+                  bottom: 140, // Clears the fixed Import action bar
                 ),
                 child: Center(
                   child: ConstrainedBox(
@@ -89,6 +195,14 @@ class ImportPreviewScreen extends StatelessWidget {
               right: 0,
               child: _buildHeader(context),
             ),
+
+            // --- Fixed Bottom Import Action Bar ---
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildBottomActions(context),
+            ),
           ],
         ),
       ),
@@ -111,7 +225,9 @@ class ImportPreviewScreen extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _importing
+                    ? null
+                    : () => Navigator.pop(context),
                 icon: Icon(
                   Icons.arrow_back,
                   color: AppColors.primary,
@@ -137,6 +253,60 @@ class ImportPreviewScreen extends StatelessWidget {
     );
   }
 
+  // Fixed bottom Import button, disabled with a spinner while importing
+  Widget _buildBottomActions(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return Container(
+      color: AppColors.background.withValues(alpha: 0.95),
+      padding: EdgeInsets.only(
+        left: screenWidth * 0.05,
+        right: screenWidth * 0.05,
+        top: 16,
+        bottom: MediaQuery.paddingOf(context).bottom + 16,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: ElevatedButton.icon(
+            onPressed: _importing ? null : _handleImport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryContainer,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.primaryContainer.withValues(
+                alpha: 0.25,
+              ),
+              disabledForegroundColor: Colors.white.withValues(alpha: 0.6),
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 1,
+              shadowColor: Colors.black.withValues(alpha: 0.15),
+            ),
+            icon: _importing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.upload_file, size: 24),
+            label: Text(
+              _importing ? 'Importing...' : 'Import',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // Summary heading above the parsed rows
   Widget _buildSummaryHeader() {
     return Column(
@@ -153,7 +323,7 @@ class ImportPreviewScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '${rows.length} row${rows.length == 1 ? '' : 's'} parsed and '
+          '${widget.rows.length} row${widget.rows.length == 1 ? '' : 's'} parsed and '
           'classified. Merchant, type, category and amount are inferred — '
           'nothing is saved yet.',
           style: GoogleFonts.inter(
@@ -168,7 +338,7 @@ class ImportPreviewScreen extends StatelessWidget {
 
   // Card list of the parsed rows
   Widget _buildRowsList() {
-    if (rows.isEmpty) {
+    if (widget.rows.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
@@ -200,9 +370,9 @@ class ImportPreviewScreen extends StatelessWidget {
 
     return Column(
       children: [
-        for (var i = 0; i < rows.length; i++) ...[
+        for (var i = 0; i < widget.rows.length; i++) ...[
           if (i > 0) const SizedBox(height: 16),
-          _buildRowCard(rows[i]),
+          _buildRowCard(widget.rows[i]),
         ],
       ],
     );

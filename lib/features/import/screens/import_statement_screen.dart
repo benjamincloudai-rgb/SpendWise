@@ -37,12 +37,18 @@ class ImportStatementScreen extends StatelessWidget {
       return;
     }
 
-    Navigator.push(
+    final imported = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => ImportPreviewScreen(rows: result.rows),
       ),
     );
+
+    // The preview pops with `true` once the statement has been imported, so
+    // return all the way to the Dashboard.
+    if (imported == true && context.mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
