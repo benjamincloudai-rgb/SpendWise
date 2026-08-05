@@ -4,19 +4,25 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 
 import '../domain/csv_statement_parser.dart';
-import '../domain/statement_row.dart';
+import '../domain/statement_classifier.dart';
+import '../domain/statement_row_info.dart';
 
-/// Orchestrates the Phase 6B CSV import flow: opens the native file picker,
-/// reads the selected file's bytes, and parses them into raw [StatementRow]s.
+/// Orchestrates the CSV import flow: opens the native file picker, reads the
+/// selected file's bytes, parses them into raw [StatementRow]s, and classifies
+/// each row into an enriched [StatementRowInfo] for the preview.
 ///
-/// Nothing is persisted and no domain logic is performed here — parsing is
-/// delegated to [CsvStatementParser] and the UI only ever sees an
-/// [ImportCsvResult].
+/// Nothing is persisted and no Firestore logic is performed here — parsing is
+/// delegated to [CsvStatementParser], classification to
+/// [StatementClassifier], and the UI only ever sees an [ImportCsvResult].
 class StatementImportService {
   final CsvStatementParser _parser;
+  final StatementClassifier _classifier;
 
-  StatementImportService({CsvStatementParser? parser})
-      : _parser = parser ?? CsvStatementParser();
+  StatementImportService({
+    CsvStatementParser? parser,
+    StatementClassifier? classifier,
+  })  : _parser = parser ?? CsvStatementParser(),
+        _classifier = classifier ?? StatementClassifier();
 
   /// Runs one CSV import attempt and returns a result that is either a
   /// success (with parsed rows), a user cancellation, or a friendly failure.
@@ -62,7 +68,8 @@ class StatementImportService {
           'No transaction rows were found in this CSV file.',
         );
       }
-      return ImportCsvResult.success(rows);
+      final classified = rows.map(_classifier.classify).toList();
+      return ImportCsvResult.success(classified);
     } catch (_) {
       return const ImportCsvResult.failed(
         'Could not parse this CSV file. Please choose a valid .csv file.',
@@ -83,13 +90,13 @@ class StatementImportService {
 
 /// The outcome of a single CSV import attempt.
 class ImportCsvResult {
-  final List<StatementRow> rows;
+  final List<StatementRowInfo> rows;
   final bool cancelled;
   final String? error;
 
   const ImportCsvResult._(this.rows, {this.cancelled = false, this.error});
 
-  const ImportCsvResult.success(List<StatementRow> rows) : this._(rows);
+  const ImportCsvResult.success(List<StatementRowInfo> rows) : this._(rows);
 
   const ImportCsvResult.cancelled() : this._(const [], cancelled: true);
 
