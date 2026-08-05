@@ -12,6 +12,7 @@ import 'package:spendwise/features/transactions/screens/transactions_screen.dart
 import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
 import 'package:spendwise/features/profile/screens/profile_screen.dart';
 import 'package:spendwise/features/dashboard/widgets/recent_transactions_widget.dart';
+import 'package:spendwise/features/import/screens/import_statement_screen.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
 
@@ -351,14 +352,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
         _buildQuickActionButton(
-          'Transfer',
-          Icons.sync,
+          'Import Statement',
+          Icons.upload_file,
           colorTertiaryContainer.withOpacity(0.2),
           colorTertiary,
           () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const BudgetScreen()),
+              MaterialPageRoute(builder: (_) => const ImportStatementScreen()),
             );
           },
         ),
