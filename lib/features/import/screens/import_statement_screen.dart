@@ -9,25 +9,28 @@ import 'package:spendwise/features/import/services/statement_import_service.dart
 /// Entry point for the Bank Statement Import feature.
 ///
 /// Phase 6B: tapping "Import CSV" opens the native file picker, parses the
-/// selected file generically, and opens the preview screen. Excel is not yet
-/// implemented and surfaces a "coming soon" SnackBar.
+/// selected file generically, and opens the preview screen. Phase 8A adds the
+/// same flow for Excel (`.xlsx`) workbooks.
 class ImportStatementScreen extends StatelessWidget {
   ImportStatementScreen({super.key});
 
   final StatementImportService _statementImportService =
       StatementImportService();
 
-  void _showExcelComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Excel import coming soon')));
-  }
-
   Future<void> _handleImportCsv(BuildContext context) async {
     final result = await _statementImportService.importCsv();
+    if (context.mounted) await _handleImportResult(context, result);
+  }
 
-    if (!context.mounted) return;
+  Future<void> _handleImportExcel(BuildContext context) async {
+    final result = await _statementImportService.importExcel();
+    if (context.mounted) await _handleImportResult(context, result);
+  }
 
+  Future<void> _handleImportResult(
+    BuildContext context,
+    StatementImportResult result,
+  ) async {
     if (result.cancelled) return;
 
     if (result.error != null) {
@@ -136,7 +139,7 @@ class ImportStatementScreen extends StatelessWidget {
                             iconBgColor: colorSecondaryFixed.withValues(
                               alpha: 0.3,
                             ),
-                            onTap: () => _showExcelComingSoon(context),
+                            onTap: () => _handleImportExcel(context),
                           ),
                         ),
                       ],
