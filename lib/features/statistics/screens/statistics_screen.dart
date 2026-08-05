@@ -23,9 +23,14 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
 
+  // Keeps the horizontally scrollable chart bars and their labels in sync
+  final ScrollController _chartScrollController = ScrollController();
+
   // Selected state variables
   DateTime _selectedDate = DateTime.now();
   String _selectedTimeframe = 'Week';
+  // Index of the tapped bar within the displayed trend series (null = none)
+  int? _selectedTrendIndex;
 
   // Live statistics data from Firestore
   final StatisticsService _statisticsService = StatisticsService();
@@ -131,8 +136,17 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   void dispose() {
     _transactionsSub?.cancel();
     _categoriesSub?.cancel();
+    _chartScrollController.dispose();
     _floatController.dispose();
     super.dispose();
+  }
+
+  // Resets the shared chart scroll offset when switching timeframe/month so
+  // the next chart never starts mid-scroll.
+  void _resetChartScroll() {
+    if (_chartScrollController.hasClients) {
+      _chartScrollController.jumpTo(0);
+    }
   }
 
   // Opens Flutter date picker overlay styled with SpendWise Green theme
@@ -160,8 +174,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
 
     if (picked != null && picked != _selectedDate) {
+      _resetChartScroll();
       setState(() {
         _selectedDate = picked;
+        _selectedTrendIndex = null;
         _monthlySummary = _statisticsService.computeMonthSummary(
           _allTransactions,
           picked,
@@ -479,6 +495,26 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     ];
     final displayTrend = hasTrendData ? trend : emptyTrend;
 
+    // Selected bar detail, read straight from the already-computed series
+    // (null when nothing is selected or the index is out of range).
+    final TrendPoint? selectedPoint =
+        _selectedTrendIndex != null &&
+            _selectedTrendIndex! >= 0 &&
+            _selectedTrendIndex! < displayTrend.length
+        ? displayTrend[_selectedTrendIndex!]
+        : null;
+
+    // Month and Year carry more buckets than comfortably fit a phone-width
+    // card, so the chart area scrolls horizontally (bars + labels together)
+    // with fixed slot widths to keep bars and labels readable. The card itself
+    // keeps its size; Week and the empty state keep the original fixed layout.
+    final bool useScrollableBars =
+        hasTrendData && _selectedTimeframe != 'Week';
+    final double trendSlotWidth = _trendSlotWidth(
+      MediaQuery.sizeOf(context).width,
+      _selectedTimeframe,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -506,7 +542,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   final isSelected = _selectedTimeframe == tf;
                   return GestureDetector(
                     onTap: () {
+                      _resetChartScroll();
                       setState(() {
+                        _selectedTrendIndex = null;
                         _selectedTimeframe = tf;
                       });
                     },
@@ -567,92 +605,360 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ),
           child: Column(
             children: [
-              SizedBox(
-                height: 128,
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Opacity(
-                        opacity: 0.1,
-                        child: Icon(
-                          Icons.show_chart,
-                          size: 80,
-                          color: colorTertiary,
-                        ),
-                      ),
-                    ),
-
-                    // Bottom-aligned bar segments scaled to the trend series
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: colorOutlineVariant.withOpacity(0.3),
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: displayTrend.map((point) {
-                            final hasSpend = point.amount > 0;
-                            final double barHeight = hasSpend
-                                ? (point.amount / maxTrendAmount) * 120
-                                : 4;
-                            return Expanded(
-                              child: Container(
-                                height: barHeight < 4 ? 4 : barHeight,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: hasSpend
-                                      ? colorPrimary
-                                      : colorSurfaceContainer,
-                                  borderRadius: hasTrendData
-                                      ? const BorderRadius.vertical(
-                                          top: Radius.circular(8),
-                                        )
-                                      : BorderRadius.circular(100),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Bucket Labels
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: displayTrend.map((point) {
-                  return Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        point.label,
-                        textAlign: TextAlign.center,
+              // Selected bar detail (amount + label) shown above the chart
+              if (selectedPoint != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '₹${formatAmount(selectedPoint.amount)}',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorOnSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _trendCaption(selectedPoint),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: colorOnSurfaceVariant,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ],
+              // Scrollable Month/Year chart: bars, baseline, and labels live in
+              // one horizontally scrollable unit so the whole chart moves
+              // together when dragged anywhere inside it.
+              if (useScrollableBars)
+                Stack(
+                  children: [
+                    // Faint background icon stays fixed behind the bars area
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 128,
+                      child: Center(
+                        child: Opacity(
+                          opacity: 0.1,
+                          child: Icon(
+                            Icons.show_chart,
+                            size: 80,
+                            color: colorTertiary,
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                }).toList(),
-              ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      controller: _chartScrollController,
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            height: 128,
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: colorOutlineVariant.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: displayTrend.asMap().entries.map(
+                                    (entry) {
+                                      final int index = entry.key;
+                                      final point = entry.value;
+                                      final hasSpend = point.amount > 0;
+                                      final bool isSelected =
+                                          _selectedTrendIndex == index;
+                                      final double barHeight = hasSpend
+                                          ? (point.amount / maxTrendAmount) *
+                                              120
+                                          : 4;
+                                      return GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedTrendIndex =
+                                                isSelected ? null : index;
+                                          });
+                                        },
+                                        child: SizedBox(
+                                          width: trendSlotWidth,
+                                          child: Align(
+                                            alignment: Alignment.bottomCenter,
+                                            child: Container(
+                                              width: trendSlotWidth - 8,
+                                              height: barHeight < 4
+                                                  ? 4
+                                                  : barHeight,
+                                              decoration: BoxDecoration(
+                                                color: isSelected
+                                                    ? colorPrimaryContainer
+                                                    : hasSpend
+                                                        ? colorPrimary
+                                                        : colorSurfaceContainer,
+                                                borderRadius: hasTrendData
+                                                    ? const BorderRadius
+                                                        .vertical(
+                                                        top: Radius.circular(8),
+                                                      )
+                                                    : BorderRadius.circular(
+                                                        100,
+                                                      ),
+                                                boxShadow: isSelected
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: colorPrimary
+                                                              .withValues(
+                                                                alpha: 0.3,
+                                                              ),
+                                                          blurRadius: 8,
+                                                          offset:
+                                                              const Offset(
+                                                                0,
+                                                                2,
+                                                              ),
+                                                        ),
+                                                      ]
+                                                    : null,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ).toList(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: displayTrend.map((point) {
+                              return SizedBox(
+                                width: trendSlotWidth,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    point.label,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorOnSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              else ...[
+                SizedBox(
+                  height: 128,
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Opacity(
+                          opacity: 0.1,
+                          child: Icon(
+                            Icons.show_chart,
+                            size: 80,
+                            color: colorTertiary,
+                          ),
+                        ),
+                      ),
+
+                      // Bottom-aligned bar segments scaled to the trend series
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: colorOutlineVariant.withOpacity(0.3),
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: displayTrend.asMap().entries.map(
+                              (entry) {
+                                final int index = entry.key;
+                                final point = entry.value;
+                                final hasSpend = point.amount > 0;
+                                final bool isSelected =
+                                    _selectedTrendIndex == index;
+                                final double barHeight = hasSpend
+                                    ? (point.amount / maxTrendAmount) * 120
+                                    : 4;
+                                return Expanded(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedTrendIndex =
+                                            isSelected ? null : index;
+                                      });
+                                    },
+                                    child: Container(
+                                      height: barHeight < 4 ? 4 : barHeight,
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? colorPrimaryContainer
+                                            : hasSpend
+                                                ? colorPrimary
+                                                : colorSurfaceContainer,
+                                        borderRadius: hasTrendData
+                                            ? const BorderRadius.vertical(
+                                                top: Radius.circular(8),
+                                              )
+                                            : BorderRadius.circular(100),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: colorPrimary
+                                                      .withValues(alpha: 0.3),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ).toList(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: displayTrend.map((point) {
+                    return Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          point.label,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: colorOnSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
           ),
         ),
       ],
     );
+  }
+
+  /// Width of a single bar slot for the scrollable Month/Year chart.
+  ///
+  /// Month days use compact slots that still leave a readable 12px bar. Year
+  /// months use wider slots so the month labels never collide; on narrow
+  /// cards the chart scrolls horizontally instead of compressing the labels.
+  double _trendSlotWidth(double screenWidth, String timeframe) {
+    if (timeframe == 'Month') return 20;
+    if (timeframe == 'Year') {
+      final cardInnerWidth = math.min(screenWidth * 0.9, 440.0) - 48;
+      return math.max((cardInnerWidth / 12).floorToDouble(), 32);
+    }
+    return 0;
+  }
+
+  /// Presentation-only caption for the selected bar's amount. Derives a full
+  /// label from the existing [TrendPoint.label] plus the selected month; it
+  /// never recomputes any total.
+  String _trendCaption(TrendPoint point) {
+    switch (_selectedTimeframe) {
+      case 'Week':
+        const fullDays = {
+          'Mon': 'Monday',
+          'Tue': 'Tuesday',
+          'Wed': 'Wednesday',
+          'Thu': 'Thursday',
+          'Fri': 'Friday',
+          'Sat': 'Saturday',
+          'Sun': 'Sunday',
+        };
+        return fullDays[point.label] ?? point.label;
+      case 'Month':
+        // The synthetic empty-state series carries weekday labels; only
+        // decorate numeric day buckets.
+        if (int.tryParse(point.label) == null) return point.label;
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        return '${point.label} ${months[_selectedDate.month - 1]}';
+      case 'Year':
+        const fullMonths = {
+          'Jan': 'January',
+          'Feb': 'February',
+          'Mar': 'March',
+          'Apr': 'April',
+          'May': 'May',
+          'Jun': 'June',
+          'Jul': 'July',
+          'Aug': 'August',
+          'Sep': 'September',
+          'Oct': 'October',
+          'Nov': 'November',
+          'Dec': 'December',
+        };
+        return fullMonths[point.label] ?? point.label;
+      default:
+        return point.label;
+    }
   }
 
   // Expense Breakdown (Donut Chart + Category Legends)
