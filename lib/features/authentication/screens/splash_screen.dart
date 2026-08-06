@@ -6,6 +6,7 @@ import 'package:spendwise/features/authentication/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
 import 'package:spendwise/core/shell/home_shell.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 //import 'dart:math' as math;
 
@@ -67,6 +68,14 @@ class _SpendWiseSplashScreenState extends State<SpendWiseSplashScreen>
         await user.reload();
 
         final refreshedUser = FirebaseAuth.instance.currentUser;
+
+        if (!mounted) return;
+
+        if (refreshedUser != null && refreshedUser.emailVerified) {
+          // Load the persisted currency before showing HomeShell to avoid
+          // a currency-symbol flicker on cold start.
+          await CurrencyController.instance.init();
+        }
 
         if (!mounted) return;
 

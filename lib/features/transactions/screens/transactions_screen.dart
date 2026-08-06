@@ -8,6 +8,7 @@ import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
+import 'package:spendwise/services/currency_controller.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
 import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
 
@@ -142,7 +143,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
           ),
           content: Text(
-            'Are you sure you want to delete this transaction of ₹${formatAmount(tx.amount)}?',
+            'Are you sure you want to delete this transaction of ${CurrencyController.instance.format(tx.amount)}?',
             style: GoogleFonts.inter(color: colorSecondary),
           ),
           actions: [
@@ -411,7 +412,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
               ),
               Text(
-                '₹${formatAmount(netBalance(_allTransactions))}',
+                CurrencyController.instance.format(netBalance(_allTransactions)),
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -430,7 +431,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
           ),
           Text(
-            '₹${formatAmount(netBalance(_allTransactions))}',
+            CurrencyController.instance.format(netBalance(_allTransactions)),
             style: GoogleFonts.inter(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -461,7 +462,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${formatAmount(sumIncome(_allTransactions))}',
+                        CurrencyController.instance.format(sumIncome(_allTransactions)),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -493,7 +494,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${formatAmount(sumExpense(_allTransactions))}',
+                        CurrencyController.instance.format(sumExpense(_allTransactions)),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -731,7 +732,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
               ),
               Text(
-                "$prefix₹${formatAmount(tx.amount)}",
+                "$prefix${CurrencyController.instance.format(tx.amount)}",
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

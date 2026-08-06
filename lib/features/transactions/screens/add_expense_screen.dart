@@ -13,6 +13,7 @@ import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/category_service.dart';
 import 'package:spendwise/services/transaction_service.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final TransactionModel?
@@ -666,7 +667,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              '₹',
+              CurrencyController.instance.symbol,
               style: GoogleFonts.inter(
                 fontSize: 48,
                 fontWeight: FontWeight.bold,

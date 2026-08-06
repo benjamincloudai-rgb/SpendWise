@@ -15,6 +15,7 @@ import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/budget_service.dart';
 import 'package:spendwise/services/category_service.dart';
 import 'package:spendwise/services/transaction_service.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -314,7 +315,7 @@ class _BudgetScreenState extends State<BudgetScreen>
 
                     const SizedBox(height: 16),
                     Text(
-                      'Budget Limit (₹)',
+                      'Budget Limit (${CurrencyController.instance.symbol})',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: colorSecondary,
@@ -694,7 +695,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                   ),
                 ),
                 Text(
-                  '₹${formatAmount(_totalBudget)}',
+                  CurrencyController.instance.format(_totalBudget),
                   style: GoogleFonts.inter(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -721,7 +722,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₹${formatAmount(_totalSpent)}',
+                      CurrencyController.instance.format(_totalSpent),
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         color: colorOnSurface,
@@ -751,7 +752,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₹${formatAmount(_totalRemaining)}',
+                      CurrencyController.instance.format(_totalRemaining),
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         color: colorPrimary,
@@ -901,7 +902,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: '₹${formatAmount(spent)} ',
+                            text: '${CurrencyController.instance.format(spent)} ',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -909,7 +910,7 @@ class _BudgetScreenState extends State<BudgetScreen>
                             ),
                             children: [
                               TextSpan(
-                                text: '/ ₹${formatAmount(item.budgetAmount)}',
+                                text: '/ ${CurrencyController.instance.format(item.budgetAmount)}',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.normal,

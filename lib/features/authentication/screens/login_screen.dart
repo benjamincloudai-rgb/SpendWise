@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/dashboard_screen.dart';
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
 import 'package:spendwise/core/shell/home_shell.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 class SpendWiseApp extends StatelessWidget {
   const SpendWiseApp({super.key});
@@ -72,6 +73,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
 
       print("Login Successful!");
+      if (!mounted) return;
+
+      await CurrencyController.instance.init();
+
       if (!mounted) return;
 
       Navigator.pushReplacement(

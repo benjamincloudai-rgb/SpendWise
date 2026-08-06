@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/theme/app_colors.dart';
-import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
+import 'package:spendwise/services/currency_controller.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
 import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
 
@@ -238,7 +238,7 @@ class RecentTransactionsWidget extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "${isExpense ? '- ' : '+ '}₹${formatAmount(tx.amount)}",
+                            "${isExpense ? '- ' : '+ '}${CurrencyController.instance.format(tx.amount)}",
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

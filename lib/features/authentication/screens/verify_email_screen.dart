@@ -4,6 +4,7 @@ import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/core/shell/home_shell.dart';
+import 'package:spendwise/services/currency_controller.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
 import 'dart:async';
 
@@ -65,6 +66,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
         if (!mounted) return;
 
+        await CurrencyController.instance.init();
+
+        if (!mounted) return;
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeShell()),
@@ -116,6 +121,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
       final updatedUser = FirebaseAuth.instance.currentUser;
 
       if (updatedUser != null && updatedUser.emailVerified) {
+        if (!mounted) return;
+
+        await CurrencyController.instance.init();
+
         if (!mounted) return;
 
         Navigator.pushReplacement(

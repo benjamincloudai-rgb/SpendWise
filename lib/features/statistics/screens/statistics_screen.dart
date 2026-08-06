@@ -11,6 +11,7 @@ import 'package:spendwise/models/category_model.dart';
 import 'package:spendwise/models/statistics_summary_model.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/statistics_service.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -409,7 +410,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         children: [
           _buildSummaryCardColumn(
             'Income',
-            '₹${formatAmount(_monthlySummary.income)}',
+            CurrencyController.instance.format(_monthlySummary.income),
             colorOnSurface,
           ),
           Container(
@@ -419,7 +420,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ),
           _buildSummaryCardColumn(
             'Expenses',
-            '₹${formatAmount(_monthlySummary.expense)}',
+            CurrencyController.instance.format(_monthlySummary.expense),
             colorOnSurface,
           ),
           Container(
@@ -429,7 +430,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ),
           _buildSummaryCardColumn(
             'Savings',
-            '₹${formatAmount(_monthlySummary.savings)}',
+            CurrencyController.instance.format(_monthlySummary.savings),
             colorPrimary,
             isBold: true,
           ),
@@ -622,7 +623,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${formatAmount(selectedPoint.amount)}',
+                        CurrencyController.instance.format(selectedPoint.amount),
                         style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -1033,7 +1034,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                           ),
                         ),
                         Text(
-                          '₹${formatAmount(_monthlySummary.expense)}',
+                          CurrencyController.instance.format(_monthlySummary.expense),
                           style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1161,13 +1162,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               children: [
                 _buildComparisonColumn(
                   label: 'Income',
-                  amount: '₹${formatAmount(income)}',
+                  amount: CurrencyController.instance.format(income),
                   ratio: incomeRatio,
                   color: colorPrimary,
                 ),
                 _buildComparisonColumn(
                   label: 'Expenses',
-                  amount: '₹${formatAmount(expense)}',
+                  amount: CurrencyController.instance.format(expense),
                   ratio: expenseRatio,
                   color: colorTertiary,
                 ),
@@ -1270,7 +1271,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               _buildTopCategoryCard(
                 'Food',
                 '0 transactions',
-                '₹0',
+                CurrencyController.instance.format(0),
                 '0%',
                 Icons.restaurant,
                 colorPrimary.withOpacity(0.1),
@@ -1280,7 +1281,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               _buildTopCategoryCard(
                 'Shopping',
                 '0 transactions',
-                '₹0',
+                CurrencyController.instance.format(0),
                 '0%',
                 Icons.shopping_bag,
                 Colors.blue.shade50,
@@ -1296,7 +1297,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 _buildTopCategoryCard(
                   _categoryBreakdown[i].name,
                   '${_categoryBreakdown[i].count} transactions',
-                  '₹${formatAmount(_categoryBreakdown[i].amount)}',
+                  CurrencyController.instance.format(_categoryBreakdown[i].amount),
                   '${_categoryBreakdown[i].percentage.toStringAsFixed(0)}%',
                   _categoryBreakdown[i].icon,
                   _categoryBreakdown[i].color.withValues(alpha: 0.1),
@@ -1471,7 +1472,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               Icons.bolt,
               'Largest Single Expense',
               _largestExpense != null
-                  ? '₹${formatAmount(_largestExpense!.amount)}'
+                  ? CurrencyController.instance.format(_largestExpense!.amount)
                   : '—',
             ),
             _buildInsightRow(
@@ -1488,8 +1489,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               Icons.currency_rupee,
               'Average Expense Transaction',
               _monthActivity.expenseCount > 0
-                  ? '₹${formatAmount(_monthActivity.averageExpense)} per transaction'
-                  : '₹0',
+                  ? '${CurrencyController.instance.format(_monthActivity.averageExpense)} per transaction'
+                  : CurrencyController.instance.format(0),
             ),
             const SizedBox(height: 12),
             Container(

@@ -4,6 +4,7 @@ import 'package:spendwise/features/authentication/screens/dashboard_screen.dart'
 import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
 import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
 import 'package:spendwise/features/profile/screens/profile_screen.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -15,19 +16,27 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
 
-  late final List<Widget> _pages = [
-    const DashboardScreen(),
-    const TransactionsScreen(),
-    const StatisticsScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
           Colors.transparent, // Prevents secondary background overlaps
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: AnimatedBuilder(
+        // Rebuilds the tabs when the selected currency changes so every
+        // money display refreshes from the single CurrencyController source.
+        animation: CurrencyController.instance,
+        builder: (context, child) {
+          return IndexedStack(
+            index: _currentIndex,
+            children: [
+              DashboardScreen(),
+              TransactionsScreen(),
+              StatisticsScreen(),
+              ProfileScreen(),
+            ],
+          );
+        },
+      ),
       bottomNavigationBar: SharedBottomNav(
         currentIndex: _currentIndex,
         onTap: (index) {

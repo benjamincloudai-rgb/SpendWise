@@ -15,6 +15,7 @@ import 'package:spendwise/features/dashboard/widgets/recent_transactions_widget.
 import 'package:spendwise/features/import/screens/import_statement_screen.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -237,7 +238,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        "₹${summary.currentBalance.toStringAsFixed(0)}",
+                        CurrencyController.instance.format(
+                          summary.currentBalance,
+                        ),
                         style: GoogleFonts.inter(
                           fontSize: 40,
                           fontWeight: FontWeight.w700,
@@ -256,7 +259,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fit: FlexFit.loose,
                           child: _buildOverviewColumn(
                             'Income',
-                            "₹${summary.totalIncome.toStringAsFixed(0)}",
+                            CurrencyController.instance.format(
+                              summary.totalIncome,
+                            ),
                             colorPrimary,
                           ),
                         ),
@@ -264,7 +269,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fit: FlexFit.loose,
                           child: _buildOverviewColumn(
                             'Expenses',
-                            "₹${summary.totalExpense.toStringAsFixed(0)}",
+                            CurrencyController.instance.format(
+                              summary.totalExpense,
+                            ),
                             colorError,
                           ),
                         ),
@@ -272,7 +279,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fit: FlexFit.loose,
                           child: _buildOverviewColumn(
                             'Savings',
-                            "₹${summary.savings.toStringAsFixed(0)}",
+                            CurrencyController.instance.format(
+                              summary.savings,
+                            ),
                             colorTertiary,
                           ),
                         ),

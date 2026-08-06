@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/theme/app_colors.dart';
-import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/category_avatar.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
@@ -9,6 +8,7 @@ import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/features/import/domain/statement_row_info.dart';
 import 'package:spendwise/features/import/domain/transaction_type.dart';
 import 'package:spendwise/features/import/services/statement_import_committer.dart';
+import 'package:spendwise/services/currency_controller.dart';
 
 /// Preview of the rows parsed and classified from a statement file.
 ///
@@ -392,7 +392,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
       TransactionType.unknown => '',
     };
     final amountLabel = info.amount != null
-        ? '$amountPrefix₹${formatAmount(info.amount!)}'
+        ? '$amountPrefix${CurrencyController.instance.format(info.amount!)}'
         : '—';
 
     return Container(

@@ -13,6 +13,9 @@ import 'package:spendwise/features/profile/screens/help_centre_screen.dart';
 import 'package:spendwise/features/profile/screens/edit_profile_screen.dart';
 import 'package:spendwise/features/profile/screens/change_password_screen.dart';
 import 'package:spendwise/features/profile/domain/profile_avatars.dart';
+import 'package:spendwise/features/settings/screens/currency_selection_screen.dart';
+import 'package:spendwise/services/currency_controller.dart';
+import 'package:spendwise/core/currency/currencies.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
 
@@ -466,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSummaryCardColumn(
                 Icons.account_balance_wallet_outlined,
                 'Current Balance',
-                "₹${summary.currentBalance.toStringAsFixed(0)}",
+                CurrencyController.instance.format(summary.currentBalance),
                 colorPrimary,
               ),
               Container(
@@ -477,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSummaryCardColumn(
                 Icons.trending_up,
                 'Total Income',
-                "₹${summary.totalIncome.toStringAsFixed(0)}",
+                CurrencyController.instance.format(summary.totalIncome),
                 colorSecondary,
               ),
               Container(
@@ -488,7 +491,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSummaryCardColumn(
                 Icons.trending_down,
                 'Total Expenses',
-                "₹${summary.totalExpense.toStringAsFixed(0)}",
+                CurrencyController.instance.format(summary.totalExpense),
                 colorError,
               ),
             ],
@@ -746,7 +749,15 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.payments_outlined,
                 title: 'Currency',
-                suffixText: 'Indian Rupee (₹)',
+                suffixText: currencyLabelFor(CurrencyController.instance.code),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CurrencySelectionScreen(),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
