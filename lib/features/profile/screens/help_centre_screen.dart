@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/widgets/animated_press_card.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
+import 'package:spendwise/features/help/screens/faq_screen.dart';
+import 'package:spendwise/features/help/screens/user_guide_screen.dart';
+import 'package:spendwise/features/help/services/help_contact_service.dart';
 
 class HelpCentreScreen extends StatefulWidget {
   const HelpCentreScreen({super.key});
@@ -14,6 +18,8 @@ class HelpCentreScreen extends StatefulWidget {
 class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProviderStateMixin {
   late AnimationController _floatController;
   bool _isLoaded = true; // Set to false to preview the Error Empty State
+
+  final HelpContactService _helpContactService = HelpContactService();
 
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
@@ -54,6 +60,49 @@ class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProvider
     setState(() {
       _isLoaded = true;
     });
+  }
+
+  // Opens the device's email app with a prepared subject
+  Future<void> _openSupportEmail(String subject) async {
+    final launched = await _helpContactService.launchSupportEmail(subject);
+    if (!launched && mounted) {
+      _showSnackBar('Could not open your email app');
+    }
+  }
+
+  // Shared inline helper for the "Coming Soon" placeholders
+  void _showComingSoon() {
+    _showSnackBar('Coming Soon');
+  }
+
+  // Consistent Snackbar style used across the app
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.inter(fontSize: 14)),
+      ),
+    );
+  }
+
+  // Copies the support email to the clipboard
+  void _copySupportEmail() {
+    Clipboard.setData(
+      const ClipboardData(text: HelpContactService.supportEmail),
+    );
+    _showSnackBar('Support email copied.');
+  }
+
+  // Opens the platform share sheet with the SpendWise invite text
+  Future<void> _shareSpendWise() async {
+    await _helpContactService.shareSpendWise();
+  }
+
+  // Shows the built-in open source licenses page using the app theme
+  void _showLicenses() {
+    showLicensePage(
+      context: context,
+      applicationName: 'SpendWise',
+    );
   }
 
   @override
@@ -235,32 +284,29 @@ class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProvider
                 icon: Icons.help_outline,
                 title: 'Frequently Asked Questions',
                 onTap: () {
-                  // Placeholder onTap
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FaqScreen()),
+                  );
                 },
               ),
               _buildDivider(),
               _buildSettingsRow(
                 icon: Icons.support_agent_outlined,
                 title: 'Contact Support',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: () => _openSupportEmail('SpendWise Support'),
               ),
               _buildDivider(),
               _buildSettingsRow(
                 icon: Icons.bug_report_outlined,
                 title: 'Report a Bug',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: () => _openSupportEmail('Bug Report'),
               ),
               _buildDivider(),
               _buildSettingsRow(
                 icon: Icons.lightbulb_outline,
                 title: 'Request a Feature',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: () => _openSupportEmail('Feature Request'),
               ),
             ],
           ),
@@ -293,29 +339,26 @@ class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProvider
               _buildSettingsRow(
                 title: 'User Guide',
                 onTap: () {
-                  // Placeholder onTap
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UserGuideScreen()),
+                  );
                 },
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Privacy Policy',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: _showComingSoon,
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Terms & Conditions',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: _showComingSoon,
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Open Source Licenses',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: _showLicenses,
               ),
             ],
           ),
@@ -348,25 +391,19 @@ class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProvider
               _buildSettingsRow(
                 title: 'Rate SpendWise',
                 trailingWidget: Icon(Icons.star_border, color: colorOutline, size: 20),
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: _showComingSoon,
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Share SpendWise',
                 trailingWidget: Icon(Icons.share_outlined, color: colorOutline, size: 20),
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: _shareSpendWise,
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Follow Updates',
                 trailingWidget: Icon(Icons.rss_feed, color: colorOutline, size: 20),
-                onTap: () {
-                  // Placeholder onTap
-                },
+                onTap: _showComingSoon,
               ),
             ],
           ),
@@ -406,9 +443,7 @@ class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProvider
               ),
               const SizedBox(width: 4),
               IconButton(
-                onPressed: () {
-                  // Copy to Clipboard placeholder
-                },
+                onPressed: _copySupportEmail,
                 icon: Icon(Icons.copy, color: colorPrimary, size: 16),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
