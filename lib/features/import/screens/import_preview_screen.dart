@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/category_avatar.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
@@ -28,6 +27,8 @@ class ImportPreviewScreen extends StatefulWidget {
 class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
   final StatementImportCommitter _committer = StatementImportCommitter();
   bool _importing = false;
+
+  ColorScheme get _scheme => Theme.of(context).colorScheme;
 
   Future<void> _handleImport() async {
     setState(() => _importing = true);
@@ -59,7 +60,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.surfaceContainerLowest,
+          backgroundColor: _scheme.surfaceContainerLowest,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -68,7 +69,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
             style: GoogleFonts.inter(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.onSurface,
+              color: _scheme.onSurface,
             ),
           ),
           content: Column(
@@ -79,7 +80,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                 children: [
                   Icon(
                     Icons.check_circle,
-                    color: AppColors.primary,
+                    color: _scheme.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 10),
@@ -87,7 +88,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                     '${outcome.imported} imported',
                     style: GoogleFonts.inter(
                       fontSize: 15,
-                      color: AppColors.onSurface,
+                      color: _scheme.onSurface,
                     ),
                   ),
                 ],
@@ -95,13 +96,13 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Icon(Icons.loop, color: AppColors.secondary, size: 20),
+                  Icon(Icons.loop, color: _scheme.secondary, size: 20),
                   const SizedBox(width: 10),
                   Text(
                     '${outcome.duplicates} duplicates skipped',
                     style: GoogleFonts.inter(
                       fontSize: 15,
-                      color: AppColors.onSurface,
+                      color: _scheme.onSurface,
                     ),
                   ),
                 ],
@@ -114,7 +115,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               child: Text(
                 'OK',
                 style: GoogleFonts.inter(
-                  color: AppColors.primary,
+                  color: _scheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -130,7 +131,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: _scheme.surface,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -140,7 +141,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               top: -100,
               right: -100,
               child: BlurBlob(
-                color: AppColors.primaryFixed.withValues(alpha: 0.1),
+                color: _scheme.primaryFixed.withValues(alpha: 0.1),
                 size: 500,
                 blur: 100,
               ),
@@ -149,7 +150,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               bottom: -100,
               left: -100,
               child: BlurBlob(
-                color: AppColors.secondaryFixed.withValues(alpha: 0.2),
+                color: _scheme.secondaryFixed.withValues(alpha: 0.2),
                 size: 400,
                 blur: 80,
               ),
@@ -214,7 +215,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Container(
-      color: AppColors.background.withValues(alpha: 0.95),
+      color: _scheme.surface.withValues(alpha: 0.95),
       padding: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.05,
         vertical: 16,
@@ -230,7 +231,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                     : () => Navigator.pop(context),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: AppColors.primary,
+                  color: _scheme.primary,
                   size: 28,
                 ),
                 constraints: const BoxConstraints(),
@@ -242,7 +243,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.onSurface,
+                  color: _scheme.onSurface,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -258,7 +259,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Container(
-      color: AppColors.background.withValues(alpha: 0.95),
+      color: _scheme.surface.withValues(alpha: 0.95),
       padding: EdgeInsets.only(
         left: screenWidth * 0.05,
         right: screenWidth * 0.05,
@@ -271,9 +272,9 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
           child: ElevatedButton.icon(
             onPressed: _importing ? null : _handleImport,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryContainer,
+              backgroundColor: _scheme.primaryContainer,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.primaryContainer.withValues(
+              disabledBackgroundColor: _scheme.primaryContainer.withValues(
                 alpha: 0.25,
               ),
               disabledForegroundColor: Colors.white.withValues(alpha: 0.6),
@@ -317,7 +318,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
           style: GoogleFonts.inter(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.onSurface,
+            color: _scheme.onSurface,
             letterSpacing: -0.5,
           ),
         ),
@@ -328,7 +329,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
           'nothing is saved yet.',
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: AppColors.onSurfaceVariant,
+            color: _scheme.onSurfaceVariant,
             height: 1.5,
           ),
         ),
@@ -343,16 +344,16 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color: _scheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.surfaceContainerLow),
+          border: Border.all(color: _scheme.surfaceContainerLow),
         ),
         child: Column(
           children: [
             Icon(
               Icons.receipt_long,
               size: 48,
-              color: AppColors.outlineVariant,
+              color: _scheme.outlineVariant,
             ),
             const SizedBox(height: 16),
             Text(
@@ -360,7 +361,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
+                color: _scheme.onSurface,
               ),
             ),
           ],
@@ -382,9 +383,9 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
   Widget _buildRowCard(StatementRowInfo info) {
     final visual = categoryVisualFor(info.category);
     final amountColor = switch (info.type) {
-      TransactionType.income => AppColors.primary,
-      TransactionType.expense => AppColors.error,
-      TransactionType.unknown => AppColors.onSurfaceVariant,
+      TransactionType.income => _scheme.primary,
+      TransactionType.expense => _scheme.error,
+      TransactionType.unknown => _scheme.onSurfaceVariant,
     };
     final amountPrefix = switch (info.type) {
       TransactionType.income => '+ ',
@@ -399,9 +400,9 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: _scheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.surfaceContainerLow),
+        border: Border.all(color: _scheme.surfaceContainerLow),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -433,7 +434,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        color: _scheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -441,7 +442,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
                       info.category,
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
+                        color: _scheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -479,7 +480,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.secondary,
+                color: _scheme.secondary,
               ),
             ),
           ),
@@ -488,7 +489,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               value.isEmpty ? '—' : value,
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: AppColors.onSurface,
+                color: _scheme.onSurface,
               ),
             ),
           ),
@@ -504,9 +505,9 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
       TransactionType.unknown => 'Unknown',
     };
     final color = switch (type) {
-      TransactionType.income => AppColors.primary,
-      TransactionType.expense => AppColors.error,
-      TransactionType.unknown => AppColors.onSurfaceVariant,
+      TransactionType.income => _scheme.primary,
+      TransactionType.expense => _scheme.error,
+      TransactionType.unknown => _scheme.onSurfaceVariant,
     };
 
     return Padding(
@@ -521,7 +522,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.secondary,
+                color: _scheme.secondary,
               ),
             ),
           ),

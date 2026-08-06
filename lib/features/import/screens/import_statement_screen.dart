@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/import/screens/import_preview_screen.dart';
@@ -58,12 +57,14 @@ class ImportStatementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    const Color colorPrimary = AppColors.primary;
-    const Color colorPrimaryContainer = AppColors.primaryContainer;
-    const Color colorBackground = AppColors.background;
-    const Color colorPrimaryFixed = AppColors.primaryFixed;
-    const Color colorSecondaryFixed = AppColors.secondaryFixed;
-    const Color colorSecondary = AppColors.secondary;
+    final Color colorPrimary = Theme.of(context).colorScheme.primary;
+    final Color colorPrimaryContainer =
+        Theme.of(context).colorScheme.primaryContainer;
+    final Color colorBackground = Theme.of(context).colorScheme.surface;
+    final Color colorPrimaryFixed = Theme.of(context).colorScheme.primaryFixed;
+    final Color colorSecondaryFixed =
+        Theme.of(context).colorScheme.secondaryFixed;
+    final Color colorSecondary = Theme.of(context).colorScheme.secondary;
 
     return Scaffold(
       backgroundColor: colorBackground,
@@ -110,12 +111,13 @@ class ImportStatementScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         EntranceAnimation(
                           delayMs: 150,
-                          child: _buildIntroText(),
+                          child: _buildIntroText(context),
                         ),
                         const SizedBox(height: 24),
                         EntranceAnimation(
                           delayMs: 250,
                           child: _buildFileTypeCard(
+                            context: context,
                             icon: Icons.table_chart,
                             title: 'Import CSV',
                             subtitle:
@@ -131,6 +133,7 @@ class ImportStatementScreen extends StatelessWidget {
                         EntranceAnimation(
                           delayMs: 320,
                           child: _buildFileTypeCard(
+                            context: context,
                             icon: Icons.grid_on,
                             title: 'Import Excel (.xlsx)',
                             subtitle:
@@ -166,8 +169,10 @@ class ImportStatementScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      color: AppColors.background.withValues(alpha: 0.95),
+      color: colorScheme.surface.withValues(alpha: 0.95),
       padding: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.05,
         vertical: 16,
@@ -181,7 +186,7 @@ class ImportStatementScreen extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: AppColors.primary,
+                  color: colorScheme.primary,
                   size: 28,
                 ),
                 constraints: const BoxConstraints(),
@@ -193,7 +198,7 @@ class ImportStatementScreen extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.onSurface,
+                  color: colorScheme.onSurface,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -205,7 +210,9 @@ class ImportStatementScreen extends StatelessWidget {
   }
 
   // Intro heading and helper text for the import flow
-  Widget _buildIntroText() {
+  Widget _buildIntroText(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,7 +221,7 @@ class ImportStatementScreen extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.onSurface,
+            color: colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
         ),
@@ -223,7 +230,7 @@ class ImportStatementScreen extends StatelessWidget {
           'Choose a file type to begin importing your bank statement.',
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: AppColors.onSurfaceVariant,
+            color: colorScheme.onSurfaceVariant,
             height: 1.5,
           ),
         ),
@@ -233,6 +240,7 @@ class ImportStatementScreen extends StatelessWidget {
 
   // Large tappable file type card following the SpendWise card language
   Widget _buildFileTypeCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -240,8 +248,10 @@ class ImportStatementScreen extends StatelessWidget {
     required Color iconBgColor,
     required VoidCallback onTap,
   }) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Material(
-      color: AppColors.surfaceContainerLowest,
+      color: colorScheme.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -251,7 +261,7 @@ class ImportStatementScreen extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.surfaceContainerLow),
+            border: Border.all(color: colorScheme.surfaceContainerLow),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -281,7 +291,7 @@ class ImportStatementScreen extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -289,7 +299,7 @@ class ImportStatementScreen extends StatelessWidget {
                       subtitle,
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: AppColors.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant,
                         height: 1.4,
                       ),
                     ),
@@ -299,7 +309,7 @@ class ImportStatementScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Icon(
                 Icons.chevron_right,
-                color: AppColors.secondary,
+                color: colorScheme.secondary,
                 size: 24,
               ),
             ],

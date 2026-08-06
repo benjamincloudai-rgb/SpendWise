@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/utils/aggregations.dart';
 import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
@@ -48,21 +47,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   bool _categoryStateInitialized = false;
 
   // Theme colors consistent with the SpendWise dashboard
-  final Color colorPrimary = AppColors.primary;
-  final Color colorPrimaryContainer = AppColors.primaryContainer;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorPrimaryFixed = AppColors.primaryFixed;
-  final Color colorSecondaryFixed = AppColors.secondaryFixed;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
+  Color get colorPrimary => Theme.of(context).colorScheme.primary;
+  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorBackground => Theme.of(context).colorScheme.surface;
+  Color get colorSurfaceContainerLowest =>
+      Theme.of(context).colorScheme.surfaceContainerLowest;
+  Color get colorSurfaceContainerLow => Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
+  Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
+  Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
+  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
 
   // Secondary, Tertiary, and Outline colors matching SpendWise specifications
-  final Color colorSecondary = AppColors.secondary;
-  final Color colorTertiary = AppColors.tertiary;
-  final Color colorOutline = AppColors.outline;
+  Color get colorSecondary => Theme.of(context).colorScheme.secondary;
+  Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
+  Color get colorOutline => Theme.of(context).colorScheme.outline;
 
   Future<void> _saveExpense() async {
     try {

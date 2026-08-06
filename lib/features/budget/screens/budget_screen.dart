@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/bottom_sheet_handle.dart';
@@ -48,22 +47,24 @@ class _BudgetScreenState extends State<BudgetScreen>
       .toList();
 
   // Strict colors matching the SpendWise design system
-  final Color colorPrimary = AppColors.primary;
-  final Color colorPrimaryContainer = AppColors.primaryContainer;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorPrimaryFixed = AppColors.primaryFixed;
-  final Color colorSecondaryFixed = AppColors.secondaryFixed;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
+  Color get colorPrimary => Theme.of(context).colorScheme.primary;
+  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorBackground => Theme.of(context).colorScheme.surface;
+  Color get colorSurfaceContainerLowest =>
+      Theme.of(context).colorScheme.surfaceContainerLowest;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
+  Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
+  Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
+  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
 
   // Secondary, Tertiary, and Error colors matching specs
-  final Color colorSecondary = AppColors.secondary;
-  final Color colorTertiary = AppColors.tertiary;
-  final Color colorError = AppColors.error;
-  final Color colorErrorContainer = AppColors.errorContainer;
+  Color get colorSecondary => Theme.of(context).colorScheme.secondary;
+  Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
+  Color get colorError => Theme.of(context).colorScheme.error;
+  Color get colorErrorContainer => Theme.of(context).colorScheme.errorContainer;
 
   // Category data loaded live from Firestore
   final CategoryService _categoryService = CategoryService();

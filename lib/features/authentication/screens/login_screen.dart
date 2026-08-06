@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/features/authentication/screens/register_screen.dart';
 import 'package:spendwise/features/authentication/screens/forgot_password_screen.dart';
@@ -9,6 +8,7 @@ import 'package:spendwise/features/authentication/screens/dashboard_screen.dart'
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
 import 'package:spendwise/core/shell/home_shell.dart';
 import 'package:spendwise/services/currency_controller.dart';
+import 'package:spendwise/services/theme_controller.dart';
 
 class SpendWiseApp extends StatelessWidget {
   const SpendWiseApp({super.key});
@@ -42,16 +42,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final TextEditingController _passwordController = TextEditingController();
 
   // Colors from the Tailwind Config
-  final Color colorPrimary = AppColors.primary;
-  final Color colorPrimaryContainer = AppColors.primaryContainer;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorPrimaryFixed = AppColors.primaryFixed;
-  final Color colorSecondaryFixed = AppColors.secondaryFixed;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
+  Color get colorPrimary => Theme.of(context).colorScheme.primary;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
+  Color get colorBackground => Theme.of(context).colorScheme.surface;
+  Color get colorSurfaceContainerLowest =>
+      Theme.of(context).colorScheme.surfaceContainerLowest;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
+  Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
+  Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
+  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
 
   Future<void> _login() async {
     try {
@@ -76,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (!mounted) return;
 
       await CurrencyController.instance.init();
+      await ThemeController.instance.init();
 
       if (!mounted) return;
 

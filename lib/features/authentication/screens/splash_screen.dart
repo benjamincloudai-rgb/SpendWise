@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
 //import 'package:spendwise/features/authentication/screens/dashboard_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/authentication/screens/verify_email_screen.dart';
 import 'package:spendwise/core/shell/home_shell.dart';
 import 'package:spendwise/services/currency_controller.dart';
+import 'package:spendwise/services/theme_controller.dart';
 
 //import 'dart:math' as math;
 
@@ -72,9 +72,10 @@ class _SpendWiseSplashScreenState extends State<SpendWiseSplashScreen>
         if (!mounted) return;
 
         if (refreshedUser != null && refreshedUser.emailVerified) {
-          // Load the persisted currency before showing HomeShell to avoid
-          // a currency-symbol flicker on cold start.
+          // Load the persisted currency and theme before showing HomeShell to
+          // avoid a currency-symbol / theme flicker on cold start.
           await CurrencyController.instance.init();
+          await ThemeController.instance.init();
         }
 
         if (!mounted) return;
@@ -107,9 +108,11 @@ class _SpendWiseSplashScreenState extends State<SpendWiseSplashScreen>
   Widget build(BuildContext context) {
     // Colors from Tailwind Config
     const colorBg = Color(0xFFF0FDF4); // rgb(240, 253, 244)
-    const colorPrimary = AppColors.primary;
-    const colorPrimaryContainer = AppColors.primaryContainer;
-    const colorSecondaryContainer = AppColors.secondaryFixed;
+    final Color colorPrimary = Theme.of(context).colorScheme.primary;
+    final Color colorPrimaryContainer =
+        Theme.of(context).colorScheme.primaryContainer;
+    final Color colorSecondaryContainer =
+        Theme.of(context).colorScheme.secondaryFixed;
     //const colorOnBackground = Color(0xFF1A1C1C);
 
     return Scaffold(
@@ -190,7 +193,7 @@ class _SpendWiseSplashScreenState extends State<SpendWiseSplashScreen>
                     const SizedBox(height: 40),
 
                     // Refined Loading Indicator
-                    const DotLoader(color: colorPrimaryContainer),
+                    DotLoader(color: colorPrimaryContainer),
                     
                     const SizedBox(height: 90),
                     

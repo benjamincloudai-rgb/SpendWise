@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
@@ -15,6 +14,7 @@ import 'package:spendwise/features/profile/screens/change_password_screen.dart';
 import 'package:spendwise/features/profile/domain/profile_avatars.dart';
 import 'package:spendwise/features/settings/screens/currency_selection_screen.dart';
 import 'package:spendwise/services/currency_controller.dart';
+import 'package:spendwise/services/theme_controller.dart';
 import 'package:spendwise/core/currency/currencies.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
@@ -29,7 +29,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
-  bool _isDarkModeEnabled = false;
 
   final DashboardService _dashboardService = DashboardService();
 
@@ -37,22 +36,24 @@ class _ProfileScreenState extends State<ProfileScreen>
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
 
   // Strict colors matching the SpendWise design system
-  final Color colorPrimary = AppColors.primary;
-  final Color colorPrimaryContainer = AppColors.primaryContainer;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorPrimaryFixed = AppColors.primaryFixed;
-  final Color colorSecondaryFixed = AppColors.secondaryFixed;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
+  Color get colorPrimary => Theme.of(context).colorScheme.primary;
+  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorBackground => Theme.of(context).colorScheme.surface;
+  Color get colorSurfaceContainerLowest =>
+      Theme.of(context).colorScheme.surfaceContainerLowest;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
+  Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
+  Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
+  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
 
   // Secondary, Tertiary, and Error colors matching specs
-  final Color colorSecondary = AppColors.secondary;
-  final Color colorTertiary = AppColors.tertiary;
-  final Color colorOutline = AppColors.outline;
-  final Color colorError = AppColors.error;
+  Color get colorSecondary => Theme.of(context).colorScheme.secondary;
+  Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
+  Color get colorOutline => Theme.of(context).colorScheme.outline;
+  Color get colorError => Theme.of(context).colorScheme.error;
 
   @override
   void initState() {
@@ -777,15 +778,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                 icon: Icons.dark_mode_outlined,
                 title: 'Dark Mode',
                 trailingWidget: Switch(
-                  value: _isDarkModeEnabled,
+                  value: ThemeController.instance.isDarkMode,
                   activeColor: Colors.white,
                   activeTrackColor: colorPrimary,
                   inactiveThumbColor: colorSecondary,
                   inactiveTrackColor: colorSurfaceContainerLow,
                   onChanged: (val) {
-                    setState(() {
-                      _isDarkModeEnabled = val;
-                    });
+                    ThemeController.instance.setDarkMode(val);
                   },
                 ),
               ),

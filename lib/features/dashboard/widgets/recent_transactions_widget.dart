@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/features/categories/domain/category_visuals.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/services/transaction_service.dart';
@@ -13,20 +12,19 @@ class RecentTransactionsWidget extends StatelessWidget {
 
   final TransactionService _transactionService = TransactionService();
 
-  // Strict colors matching the SpendWise design system
-  final Color colorPrimary = AppColors.primary;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
-  final Color colorSecondary = AppColors.secondary;
-  final Color colorError = AppColors.error;
-  final Color colorErrorContainer = AppColors.errorContainer;
-
   @override
   Widget build(BuildContext context) {
+    // Strict colors matching the SpendWise design system
+    final scheme = Theme.of(context).colorScheme;
+    final colorPrimary = scheme.primary;
+    final colorSurfaceContainerLowest = scheme.surfaceContainerLowest;
+    final colorSurfaceContainerLow = scheme.surfaceContainerLow;
+    final colorOnSurfaceVariant = scheme.onSurfaceVariant;
+    final colorOnSurface = scheme.onSurface;
+    final colorOutlineVariant = scheme.outlineVariant;
+    final colorSecondary = scheme.secondary;
+    final colorError = scheme.error;
+
     return StreamBuilder<List<TransactionModel>>(
       stream: _transactionService.getTransactions(),
       builder: (context, snapshot) {

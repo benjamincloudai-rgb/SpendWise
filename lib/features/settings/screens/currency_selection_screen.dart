@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/currency/currencies.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/services/currency_controller.dart';
@@ -16,16 +15,18 @@ class CurrencySelectionScreen extends StatefulWidget {
 
 class _CurrencySelectionScreenState extends State<CurrencySelectionScreen> {
   // Strict colors matching the SpendWise design system
-  final Color colorPrimary = AppColors.primary;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorPrimaryFixed = AppColors.primaryFixed;
-  final Color colorSecondaryFixed = AppColors.secondaryFixed;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
-  final Color colorSecondary = AppColors.secondary;
+  Color get colorPrimary => Theme.of(context).colorScheme.primary;
+  Color get colorBackground => Theme.of(context).colorScheme.surface;
+  Color get colorSurfaceContainerLowest =>
+      Theme.of(context).colorScheme.surfaceContainerLowest;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
+  Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
+  Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
+  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
+  Color get colorSecondary => Theme.of(context).colorScheme.secondary;
 
   String _selectedCode = CurrencyController.instance.code;
 

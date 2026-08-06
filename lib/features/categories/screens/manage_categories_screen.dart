@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:spendwise/core/theme/app_colors.dart';
 import 'package:spendwise/core/utils/aggregations.dart';
 import 'package:spendwise/core/widgets/animated_press_card.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
@@ -31,20 +30,22 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   late final Stream<List<CategoryModel>> _categoriesStream;
 
   // Strict colors matching the SpendWise design system
-  final Color colorPrimary = AppColors.primary;
-  final Color colorBackground = AppColors.background;
-  final Color colorSurfaceContainerLowest = AppColors.surfaceContainerLowest;
-  final Color colorSurfaceContainerLow = AppColors.surfaceContainerLow;
-  final Color colorSurfaceContainer = AppColors.surfaceContainer;
-  final Color colorOnSurfaceVariant = AppColors.onSurfaceVariant;
-  final Color colorOnSurface = AppColors.onSurface;
-  final Color colorPrimaryFixed = AppColors.primaryFixed;
-  final Color colorSecondaryFixed = AppColors.secondaryFixed;
-  final Color colorOutlineVariant = AppColors.outlineVariant;
+  Color get colorPrimary => Theme.of(context).colorScheme.primary;
+  Color get colorBackground => Theme.of(context).colorScheme.surface;
+  Color get colorSurfaceContainerLowest =>
+      Theme.of(context).colorScheme.surfaceContainerLowest;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorSurfaceContainer => Theme.of(context).colorScheme.surfaceContainer;
+  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
+  Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
+  Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
+  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
 
   // Secondary and Tertiary colors matching specs
-  final Color colorSecondary = AppColors.secondary;
-  final Color colorTertiary = AppColors.tertiary;
+  Color get colorSecondary => Theme.of(context).colorScheme.secondary;
+  Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
 
   @override
   void initState() {
@@ -500,7 +501,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       style: GoogleFonts.inter(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black, // Explicitly black
+                        color: colorSecondary,
                         letterSpacing: -0.5,
                       ),
                     ),
