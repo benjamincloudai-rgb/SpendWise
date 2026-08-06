@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
+import 'package:spendwise/features/help/screens/privacy_policy_screen.dart';
+import 'package:spendwise/features/help/screens/terms_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -407,25 +409,23 @@ class _SettingsScreenState extends State<SettingsScreen>
             children: [
               _buildSettingsRow(
                 title: 'Privacy Policy',
-                trailingWidget: Icon(
-                  Icons.open_in_new,
-                  color: colorOutlineVariant,
-                  size: 20,
-                ),
                 onTap: () {
-                  // Placeholder onTap
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen(),
+                    ),
+                  );
                 },
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Terms & Conditions',
-                trailingWidget: Icon(
-                  Icons.open_in_new,
-                  color: colorOutlineVariant,
-                  size: 20,
-                ),
                 onTap: () {
-                  // Placeholder onTap
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TermsScreen()),
+                  );
                 },
               ),
               _buildDivider(),

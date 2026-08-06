@@ -9,6 +9,9 @@ import 'package:spendwise/features/settings/screens/settings_screen.dart';
 import 'package:spendwise/features/categories/screens/manage_categories_screen.dart';
 import 'package:spendwise/features/profile/screens/notifications_screen.dart';
 import 'package:spendwise/features/profile/screens/help_centre_screen.dart';
+import 'package:spendwise/features/help/screens/about_screen.dart';
+import 'package:spendwise/features/help/screens/privacy_policy_screen.dart';
+import 'package:spendwise/features/help/screens/terms_screen.dart';
 import 'package:spendwise/features/profile/screens/edit_profile_screen.dart';
 import 'package:spendwise/features/profile/screens/change_password_screen.dart';
 import 'package:spendwise/features/profile/domain/profile_avatars.dart';
@@ -844,11 +847,28 @@ class _ProfileScreenState extends State<ProfileScreen>
                 
                 ),
               _buildDivider(),
-              _buildSettingsRow(icon: Icons.gavel, title: 'Privacy Policy'),
+              _buildSettingsRow(
+                icon: Icons.gavel,
+                title: 'Privacy Policy',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                },
+              ),
               _buildDivider(),
               _buildSettingsRow(
                 icon: Icons.description_outlined,
                 title: 'Terms & Conditions',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TermsScreen()),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
@@ -860,6 +880,12 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.info_outline,
                 title: 'About SpendWise',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AboutScreen()),
+                  );
+                },
               ),
             ],
           ),

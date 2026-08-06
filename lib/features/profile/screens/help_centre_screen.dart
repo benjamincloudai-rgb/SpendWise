@@ -5,6 +5,8 @@ import 'package:spendwise/core/widgets/animated_press_card.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/help/screens/faq_screen.dart';
+import 'package:spendwise/features/help/screens/privacy_policy_screen.dart';
+import 'package:spendwise/features/help/screens/terms_screen.dart';
 import 'package:spendwise/features/help/screens/user_guide_screen.dart';
 import 'package:spendwise/features/help/services/help_contact_service.dart';
 
@@ -348,12 +350,24 @@ class _HelpCentreScreenState extends State<HelpCentreScreen> with TickerProvider
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Privacy Policy',
-                onTap: _showComingSoon,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
                 title: 'Terms & Conditions',
-                onTap: _showComingSoon,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TermsScreen()),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
