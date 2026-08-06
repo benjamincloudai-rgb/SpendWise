@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/core/theme/app_colors.dart';
+import 'package:spendwise/core/utils/formatters.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/settings/screens/settings_screen.dart';
 import 'package:spendwise/features/categories/screens/manage_categories_screen.dart';
 import 'package:spendwise/features/profile/screens/notifications_screen.dart';
 import 'package:spendwise/features/profile/screens/help_centre_screen.dart';
+import 'package:spendwise/models/dashboard_summary_model.dart';
+import 'package:spendwise/services/dashboard_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
-
-  static const String userName = 'Benjamin Arockiaraj';
-  static const String userEmail = 'benjamin@email.com';
-  static const String memberSince = 'Member since August 2026';
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -23,6 +24,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
   bool _isDarkModeEnabled = false;
+
+  final DashboardService _dashboardService = DashboardService();
+
+  late Stream<DashboardSummaryModel> _summaryStream;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
 
   // Strict colors matching the SpendWise design system
   final Color colorPrimary = AppColors.primary;
@@ -45,10 +51,33 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    _userStream = _buildUserStream();
+    _summaryStream = _dashboardService.getDashboardSummary();
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _buildUserStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots();
+  }
+
+  void _retryLoadProfile() {
+    setState(() {
+      _userStream = _buildUserStream();
+    });
+  }
+
+  void _retryLoadSummary() {
+    setState(() {
+      _summaryStream = _dashboardService.getDashboardSummary();
+    });
   }
 
   @override
@@ -197,6 +226,61 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // Large Rounded Profile Card Widget
   Widget _buildProfileCard() {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _userStream,
+      builder: (context, snapshot) {
+        if (_userStream == null) {
+          return _buildProfileCardShell(
+            child: _buildProfileInfoContent(
+              displayName: 'Unnamed User',
+              displayEmail: '—',
+              memberSince: '—',
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return _buildProfileCardShell(
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _buildProfileCardShell(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: _buildProfileErrorContent(),
+            ),
+          );
+        }
+
+        final data = snapshot.data?.data();
+        final rawName = data?['fullName'];
+        final String displayName =
+            rawName is String && rawName.trim().isNotEmpty
+            ? rawName
+            : 'Unnamed User';
+        final String memberSince = _formatMemberSince(data?['createdAt']);
+        final String? email = FirebaseAuth.instance.currentUser?.email;
+        final String displayEmail =
+            (email == null || email.isEmpty) ? '—' : email;
+
+        return _buildProfileCardShell(
+          child: _buildProfileInfoContent(
+            displayName: displayName,
+            displayEmail: displayEmail,
+            memberSince: memberSince,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileCardShell({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -212,78 +296,189 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 96,
-                height: 96,
+      child: child,
+    );
+  }
+
+  Widget _buildProfileInfoContent({
+    required String displayName,
+    required String displayEmail,
+    required String memberSince,
+  }) {
+    return Column(
+      children: [
+        Stack(
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: colorPrimaryContainer, width: 4),
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/profile_placeholder.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 1,
+              right: 1,
+              child: Container(
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
+                  color: colorPrimary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: colorPrimaryContainer, width: 4),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/profile_placeholder.png'),
-                    fit: BoxFit.cover,
+                  border: Border.all(
+                    color: colorSurfaceContainerLowest,
+                    width: 2,
                   ),
                 ),
+                child: const Icon(Icons.edit, size: 14, color: Colors.white),
               ),
-              Positioned(
-                bottom: 1,
-                right: 1,
-                child: Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: colorPrimary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorSurfaceContainerLowest,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(Icons.edit, size: 14, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            ProfileScreen.userName,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colorOnSurface,
             ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          displayName,
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: colorOnSurface,
           ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                ProfileScreen.userEmail,
-                style: GoogleFonts.inter(fontSize: 14, color: colorSecondary),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.verified, color: colorPrimary, size: 16),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            ProfileScreen.memberSince,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: colorSecondary.withOpacity(0.7),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              displayEmail,
+              style: GoogleFonts.inter(fontSize: 14, color: colorSecondary),
             ),
+            const SizedBox(width: 4),
+            Icon(Icons.verified, color: colorPrimary, size: 16),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          memberSince,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: colorSecondary.withOpacity(0.7),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  String _formatMemberSince(Object? value) {
+    if (value is! Timestamp) return '—';
+    final date = value.toDate();
+    return 'Member since ${formatMonthYear(date)}';
+  }
+
+  Widget _buildProfileErrorContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.cloud_off_outlined, color: colorSecondary, size: 28),
+        const SizedBox(height: 8),
+        Text(
+          'Unable to load profile',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: colorOnSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: _retryLoadProfile,
+          style: TextButton.styleFrom(
+            foregroundColor: colorPrimary,
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            'Retry',
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
     );
   }
 
   // Financial Summary Section Widget
   Widget _buildFinancialSummary() {
+    return StreamBuilder<DashboardSummaryModel>(
+      stream: _summaryStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return _buildSummaryCard(
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 30),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _buildSummaryCard(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 26),
+              child: _buildSummaryErrorContent(),
+            ),
+          );
+        }
+
+        final summary = snapshot.data ?? DashboardSummaryModel.zero();
+
+        return _buildSummaryCard(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryCardColumn(
+                Icons.account_balance_wallet_outlined,
+                'Current Balance',
+                "₹${summary.currentBalance.toStringAsFixed(0)}",
+                colorPrimary,
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: colorOutlineVariant.withOpacity(0.3),
+              ),
+              _buildSummaryCardColumn(
+                Icons.trending_up,
+                'Total Income',
+                "₹${summary.totalIncome.toStringAsFixed(0)}",
+                colorSecondary,
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: colorOutlineVariant.withOpacity(0.3),
+              ),
+              _buildSummaryCardColumn(
+                Icons.trending_down,
+                'Total Expenses',
+                "₹${summary.totalExpense.toStringAsFixed(0)}",
+                colorError,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryCard({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
@@ -299,39 +494,40 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildSummaryCardColumn(
-            Icons.account_balance_wallet_outlined,
-            'Current Balance',
-            '₹0',
-            colorPrimary,
+      child: child,
+    );
+  }
+
+  Widget _buildSummaryErrorContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.cloud_off_outlined, color: colorSecondary, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          'Unable to load summary',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: colorOnSurface,
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: colorOutlineVariant.withOpacity(0.3),
+        ),
+        const SizedBox(height: 10),
+        TextButton(
+          onPressed: _retryLoadSummary,
+          style: TextButton.styleFrom(
+            foregroundColor: colorPrimary,
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          _buildSummaryCardColumn(
-            Icons.trending_up,
-            'Total Income',
-            '₹0',
-            colorSecondary,
+          child: Text(
+            'Retry',
+            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: colorOutlineVariant.withOpacity(0.3),
-          ),
-          _buildSummaryCardColumn(
-            Icons.trending_down,
-            'Total Expenses',
-            '₹0',
-            colorError,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
