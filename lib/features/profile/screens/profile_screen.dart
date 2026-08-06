@@ -10,6 +10,8 @@ import 'package:spendwise/features/settings/screens/settings_screen.dart';
 import 'package:spendwise/features/categories/screens/manage_categories_screen.dart';
 import 'package:spendwise/features/profile/screens/notifications_screen.dart';
 import 'package:spendwise/features/profile/screens/help_centre_screen.dart';
+import 'package:spendwise/features/profile/screens/edit_profile_screen.dart';
+import 'package:spendwise/features/profile/domain/profile_avatars.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
 
@@ -78,6 +80,15 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() {
       _summaryStream = _dashboardService.getDashboardSummary();
     });
+  }
+
+  Future<void> _openEditProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+    );
+    // Recreate the user stream so the updated name/avatar shows immediately.
+    if (mounted) _retryLoadProfile();
   }
 
   @override
@@ -235,6 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               displayName: 'Unnamed User',
               displayEmail: '—',
               memberSince: '—',
+              avatarKey: defaultProfileAvatarKey,
             ),
           );
         }
@@ -268,12 +280,18 @@ class _ProfileScreenState extends State<ProfileScreen>
         final String? email = FirebaseAuth.instance.currentUser?.email;
         final String displayEmail =
             (email == null || email.isEmpty) ? '—' : email;
+        final rawAvatarKey = data?['avatarKey'];
+        final String avatarKey =
+            rawAvatarKey is String && rawAvatarKey.isNotEmpty
+            ? rawAvatarKey
+            : defaultProfileAvatarKey;
 
         return _buildProfileCardShell(
           child: _buildProfileInfoContent(
             displayName: displayName,
             displayEmail: displayEmail,
             memberSince: memberSince,
+            avatarKey: avatarKey,
           ),
         );
       },
@@ -304,7 +322,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     required String displayName,
     required String displayEmail,
     required String memberSince,
+    required String avatarKey,
   }) {
+    final avatar = profileAvatarFor(avatarKey);
+
     return Column(
       children: [
         Stack(
@@ -312,14 +333,12 @@ class _ProfileScreenState extends State<ProfileScreen>
             Container(
               width: 96,
               height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: colorPrimaryContainer, width: 4),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/profile_placeholder.png'),
-                  fit: BoxFit.cover,
-                ),
+              decoration: profileAvatarDecoration(
+                avatarKey,
+                ringColor: colorPrimaryContainer,
+                ringWidth: 4,
               ),
+              child: Icon(avatar.icon, size: 44, color: avatar.color),
             ),
             Positioned(
               bottom: 1,
@@ -607,6 +626,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.person_outline,
                 title: 'Edit Profile',
+                onTap: _openEditProfile,
               ),
               _buildDivider(),
               _buildSettingsRow(
