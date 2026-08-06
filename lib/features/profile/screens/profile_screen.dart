@@ -11,6 +11,7 @@ import 'package:spendwise/features/categories/screens/manage_categories_screen.d
 import 'package:spendwise/features/profile/screens/notifications_screen.dart';
 import 'package:spendwise/features/profile/screens/help_centre_screen.dart';
 import 'package:spendwise/features/profile/screens/edit_profile_screen.dart';
+import 'package:spendwise/features/profile/screens/change_password_screen.dart';
 import 'package:spendwise/features/profile/domain/profile_avatars.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
@@ -632,6 +633,14 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.lock_open,
                 title: 'Change Password',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ChangePasswordScreen(),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _buildSettingsRow(
