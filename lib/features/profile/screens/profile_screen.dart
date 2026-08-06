@@ -16,6 +16,7 @@ import 'package:spendwise/features/settings/screens/currency_selection_screen.da
 import 'package:spendwise/services/currency_controller.dart';
 import 'package:spendwise/services/theme_controller.dart';
 import 'package:spendwise/core/currency/currencies.dart';
+import 'package:spendwise/features/export/services/transaction_export_service.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
 
@@ -31,6 +32,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   late AnimationController _floatController;
 
   final DashboardService _dashboardService = DashboardService();
+
+  final TransactionExportService _exportService = TransactionExportService();
+
+  bool _isExporting = false;
 
   late Stream<DashboardSummaryModel> _summaryStream;
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
@@ -849,6 +854,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _buildSettingsRow(
                 icon: Icons.file_download_outlined,
                 title: 'Export Data',
+                onTap: _isExporting ? null : _exportData,
               ),
               _buildDivider(),
               _buildSettingsRow(
@@ -920,6 +926,49 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   // Helper row builder inside cards
+  // Exports every transaction to a shareable CSV file and reports the result
+  Future<void> _exportData() async {
+    if (_isExporting) return;
+
+    setState(() => _isExporting = true);
+
+    final result = await _exportService.export();
+
+    if (!mounted) return;
+    setState(() => _isExporting = false);
+
+    final messenger = ScaffoldMessenger.of(context);
+    switch (result.status) {
+      case TransactionExportStatus.success:
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Export complete — ${result.count} transactions',
+              style: GoogleFonts.inter(fontSize: 14),
+            ),
+          ),
+        );
+      case TransactionExportStatus.noTransactions:
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'No transactions to export yet',
+              style: GoogleFonts.inter(fontSize: 14),
+            ),
+          ),
+        );
+      case TransactionExportStatus.failure:
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message ?? 'Export failed',
+              style: GoogleFonts.inter(fontSize: 14),
+            ),
+          ),
+        );
+    }
+  }
+
   Widget _buildSettingsRow({
     required IconData icon,
     required String title,
