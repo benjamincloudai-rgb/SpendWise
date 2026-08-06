@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spendwise/core/widgets/animated_press_card.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
+import 'package:spendwise/core/widgets/bottom_sheet_handle.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
+import 'package:spendwise/features/notifications/domain/notification_sounds.dart';
+import 'package:spendwise/services/notification_settings_controller.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -14,16 +17,8 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> with TickerProviderStateMixin {
   late AnimationController _floatController;
 
-  // Customizable toggle states
-  bool _budgetAlerts = true;
-  bool _dailyReminder = false;
-  bool _weeklySummary = true;
-  bool _monthlyReport = true;
-  bool _smartInsights = true;
-
-  // Mandatory security toggle states (forced enabled/disabled)
-  final bool _loginAlerts = true;
-  final bool _importantUpdates = true;
+  NotificationSettingsController get _controller =>
+      NotificationSettingsController.instance;
 
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
@@ -52,6 +47,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
+
+    // Load the persisted preferences (idempotent) before rendering toggles.
+    _controller.init();
   }
 
   @override
@@ -61,28 +59,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
   }
 
   // Reactive computed empty state getter
-  bool get _allNotificationsOff =>
-      !_budgetAlerts &&
-      !_dailyReminder &&
-      !_weeklySummary &&
-      !_monthlyReport &&
-      !_smartInsights;
-
-  // Toggles all customizable options back on
-  void _enableAllNotifications() {
-    setState(() {
-      _budgetAlerts = true;
-      _dailyReminder = true;
-      _weeklySummary = true;
-      _monthlyReport = true;
-      _smartInsights = true;
-    });
-  }
+  bool get _allNotificationsOff => _controller.allNotificationsOff;
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final isOff = _allNotificationsOff;
 
     return Scaffold(
       backgroundColor: colorBackground,
@@ -112,55 +93,70 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
 
             // --- Scrollable Form Content ---
             Positioned.fill(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.only(
-                  left: screenWidth * 0.05,
-                  right: screenWidth * 0.05,
-                  top: 92, // Clears top sticky App Bar with subtitle spacing
-                  bottom: 40, // Secure padding at the bottom
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        
-                        // Condition layout showing Empty State or Segmented Cards
-                        isOff
-                            ? EntranceAnimation(
-                                delayMs: 100,
-                                child: _buildEmptyState(),
-                              )
-                            : Column(
-                                children: [
-                                  EntranceAnimation(
-                                    delayMs: 100,
-                                    child: _buildGeneralSection(),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  EntranceAnimation(
-                                    delayMs: 180,
-                                    child: _buildSecuritySection(),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  EntranceAnimation(
-                                    delayMs: 240,
-                                    child: _buildSmartInsightsSection(),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  EntranceAnimation(
-                                    delayMs: 300,
-                                    child: _buildPreferencesSection(),
-                                  ),
-                                ],
-                              ),
-                      ],
+              child: AnimatedBuilder(
+                // Rebuilds toggles / values when the persisted settings change
+                // or finish loading, so no temporary defaults flash.
+                animation: _controller,
+                builder: (context, child) {
+                  if (!_controller.loaded) {
+                    return Center(
+                      child: CircularProgressIndicator(color: colorPrimary),
+                    );
+                  }
+
+                  final isOff = _allNotificationsOff;
+
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      right: screenWidth * 0.05,
+                      top: 92, // Clears top sticky App Bar with subtitle spacing
+                      bottom: 40, // Secure padding at the bottom
                     ),
-                  ),
-                ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+
+                            // Condition layout showing Empty State or Segmented Cards
+                            isOff
+                                ? EntranceAnimation(
+                                    delayMs: 100,
+                                    child: _buildEmptyState(),
+                                  )
+                                : Column(
+                                    children: [
+                                      EntranceAnimation(
+                                        delayMs: 100,
+                                        child: _buildGeneralSection(),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      EntranceAnimation(
+                                        delayMs: 180,
+                                        child: _buildSecuritySection(),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      EntranceAnimation(
+                                        delayMs: 240,
+                                        child: _buildSmartInsightsSection(),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      EntranceAnimation(
+                                        delayMs: 300,
+                                        child: _buildPreferencesSection(),
+                                      ),
+                                    ],
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
 
@@ -259,45 +255,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
               _buildSwitchRow(
                 title: 'Budget Alerts',
                 description: 'Get notified when you approach budget limits',
-                value: _budgetAlerts,
-                onChanged: (val) {
-                  setState(() {
-                    _budgetAlerts = val;
-                  });
-                },
+                value: _controller.budgetAlerts,
+                onChanged: _controller.setBudgetAlerts,
               ),
               _buildDivider(),
               _buildSwitchRow(
                 title: 'Daily Reminder',
                 description: "A gentle nudge to log today's expenses",
-                value: _dailyReminder,
-                onChanged: (val) {
-                  setState(() {
-                    _dailyReminder = val;
-                  });
-                },
+                value: _controller.dailyReminder,
+                onChanged: _controller.setDailyReminder,
               ),
               _buildDivider(),
               _buildSwitchRow(
                 title: 'Weekly Summary',
                 description: 'Review your spending habits every Sunday',
-                value: _weeklySummary,
-                onChanged: (val) {
-                  setState(() {
-                    _weeklySummary = val;
-                  });
-                },
+                value: _controller.weeklySummary,
+                onChanged: _controller.setWeeklySummary,
               ),
               _buildDivider(),
               _buildSwitchRow(
                 title: 'Monthly Summary',
                 description: "Detailed insights into your month's finances",
-                value: _monthlyReport,
-                onChanged: (val) {
-                  setState(() {
-                    _monthlyReport = val;
-                  });
-                },
+                value: _controller.monthlyReport,
+                onChanged: _controller.setMonthlyReport,
               ),
             ],
           ),
@@ -331,14 +311,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
               _buildSwitchRow(
                 title: 'Security Alerts',
                 description: 'Alert me of logins from new devices',
-                value: _loginAlerts,
+                value: true,
                 onChanged: null, // Disabled matching mandatory specs
               ),
               _buildDivider(),
               _buildSwitchRow(
                 title: 'App Updates',
                 description: 'Critical account and security notices',
-                value: _importantUpdates,
+                value: true,
                 onChanged: null, // Disabled matching mandatory specs
               ),
             ],
@@ -373,12 +353,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
               _buildSwitchRow(
                 title: 'Smart Spending Insights',
                 description: 'Receive personalized spending insights and saving recommendations.',
-                value: _smartInsights,
-                onChanged: (val) {
-                  setState(() {
-                    _smartInsights = val;
-                  });
-                },
+                value: _controller.smartInsights,
+                onChanged: _controller.setSmartInsights,
               ),
             ],
           ),
@@ -411,18 +387,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             children: [
               _buildPreferenceRow(
                 title: 'Reminder Time',
-                value: '8:00 PM',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                value: _controller.reminderTimeLabel,
+                onTap: _pickReminderTime,
               ),
               _buildDivider(),
               _buildPreferenceRow(
                 title: 'Notification Sound',
-                value: 'Default',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                value: _controller.notificationSoundLabel,
+                onTap: _pickNotificationSound,
               ),
             ],
           ),
@@ -558,6 +530,115 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     );
   }
 
+  // Picks the daily reminder time using Flutter's built-in time picker
+  Future<void> _pickReminderTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _controller.reminderTime,
+      helpText: 'Daily Reminder Time',
+    );
+    if (picked != null) {
+      _controller.setReminderTime(picked);
+    }
+  }
+
+  // Opens the notification sound selector bottom sheet
+  Future<void> _pickNotificationSound() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: colorSurfaceContainerLowest,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 16,
+              bottom: 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BottomSheetHandle(),
+                const SizedBox(height: 24),
+                Text(
+                  'Notification Sound',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorOnSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Choose the sound used for your notifications.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: colorSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: notificationSoundOptions.map((option) {
+                        final bool selected =
+                            option.key == _controller.notificationSound;
+                        return AnimatedPressCard(
+                          onTap: () {
+                            _controller.setNotificationSound(option.key);
+                            Navigator.pop(context);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 8,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  option.icon,
+                                  size: 22,
+                                  color: colorPrimary,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    option.label,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorOnSurface,
+                                    ),
+                                  ),
+                                ),
+                                if (selected)
+                                  Icon(Icons.check_circle,
+                                      color: colorPrimary, size: 22),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // Clean empty state with illustrative trigger action button
   Widget _buildEmptyState() {
     return Container(
@@ -598,7 +679,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
           ),
           const SizedBox(height: 28),
           ElevatedButton(
-            onPressed: _enableAllNotifications,
+            onPressed: _controller.enableAll,
             style: ElevatedButton.styleFrom(
               backgroundColor: colorPrimary,
               foregroundColor: Colors.white,
