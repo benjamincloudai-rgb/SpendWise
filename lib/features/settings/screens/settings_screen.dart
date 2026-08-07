@@ -4,6 +4,7 @@ import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/help/screens/privacy_policy_screen.dart';
 import 'package:spendwise/features/help/screens/terms_screen.dart';
+import 'package:spendwise/features/settings/services/cache_cleaner_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,6 +17,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
   bool _isBiometricEnabled = true;
+
+  final CacheCleanerService _cacheCleanerService = CacheCleanerService();
+  bool _isClearingCache = false;
 
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
@@ -364,9 +368,17 @@ class _SettingsScreenState extends State<SettingsScreen>
               _buildSettingsRow(
                 icon: Icons.cleaning_services_outlined,
                 title: 'Clear Cache',
-                onTap: () {
-                  // Placeholder onTap
-                },
+                trailingWidget: _isClearingCache
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorPrimary,
+                        ),
+                      )
+                    : null,
+                onTap: _isClearingCache ? null : _confirmClearCache,
               ),
             ],
           ),
@@ -548,6 +560,82 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
     );
+  }
+
+  // Confirmation dialog before clearing temporary SpendWise data
+  Future<void> _confirmClearCache() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: colorSurfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Text(
+            'Clear Cache?',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold,
+              color: colorOnSurface,
+            ),
+          ),
+          content: Text(
+            'This will remove temporary files and cached images created by '
+            'SpendWise. Your transactions, budgets, categories, profile, '
+            'settings, and account data will NOT be affected.',
+            style: GoogleFonts.inter(color: colorSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.inter(
+                  color: colorSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                'Clear Cache',
+                style: GoogleFonts.inter(
+                  color: colorError,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+    await _clearCache();
+  }
+
+  // Clears temporary SpendWise data and reports the outcome
+  Future<void> _clearCache() async {
+    if (_isClearingCache) return;
+
+    setState(() => _isClearingCache = true);
+
+    final result = await _cacheCleanerService.clear();
+
+    if (!mounted) return;
+    setState(() => _isClearingCache = false);
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.message,
+            style: GoogleFonts.inter(fontSize: 14),
+          ),
+        ),
+      );
   }
 
   // Helper row builder inside cards
