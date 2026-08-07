@@ -176,6 +176,27 @@ class AppLockController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Wipes all local App Lock state (PIN, biometrics, lockout). Called after
+  /// account deletion so a future account on this device is not locked behind
+  /// the deleted account's PIN.
+  Future<void> reset() async {
+    _enabled = false;
+    _isLocked = false;
+    _pinHash = null;
+    _salt = null;
+    _failedAttempts = 0;
+    _lockedUntil = null;
+    _biometricEnabled = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kEnabled);
+    await prefs.remove(_kPinHash);
+    await prefs.remove(_kSalt);
+    await prefs.remove(_kFailedAttempts);
+    await prefs.remove(_kLockedUntil);
+    await prefs.remove(_kBiometricEnabled);
+    notifyListeners();
+  }
+
   /// Clears an expired lockout window and resets the attempt counter.
   Future<void> clearExpiredLockout() async {
     final until = _lockedUntil;

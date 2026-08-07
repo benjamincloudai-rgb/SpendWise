@@ -5,6 +5,7 @@ import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/help/screens/privacy_policy_screen.dart';
 import 'package:spendwise/features/help/screens/terms_screen.dart';
 import 'package:spendwise/features/settings/screens/app_lock_setup_screen.dart';
+import 'package:spendwise/features/profile/screens/delete_account_screen.dart';
 import 'package:spendwise/features/settings/services/cache_cleaner_service.dart';
 import 'package:spendwise/services/app_lock_controller.dart';
 import 'package:spendwise/services/biometric_service.dart';
@@ -527,9 +528,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                 iconBgColor: colorErrorContainer,
                 textColor: colorError,
                 title: 'Delete Account',
-                trailingWidget: const SizedBox.shrink(),
                 onTap: () {
-                  // Placeholder onTap
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DeleteAccountScreen(),
+                    ),
+                  );
                 },
               ),
             ],

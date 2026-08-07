@@ -722,7 +722,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       ],
     );
   }
-
   // Preferences Settings Section List
   Widget _buildPreferencesSection() {
     return Column(
