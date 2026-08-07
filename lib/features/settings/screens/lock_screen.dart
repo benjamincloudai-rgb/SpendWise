@@ -6,6 +6,7 @@ import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/settings/widgets/pin_pad.dart';
 import 'package:spendwise/services/app_lock_controller.dart';
+import 'package:spendwise/services/biometric_service.dart';
 
 /// Full-screen lock overlay shown on top of the authenticated app whenever
 /// App Lock is engaged. Unlocking simply removes the overlay; the navigation
@@ -22,6 +23,9 @@ class _LockScreenState extends State<LockScreen> {
   String _enteredPin = '';
   bool _showError = false;
   bool _isVerifying = false;
+  bool _biometricsAvailable = false;
+  bool _isAuthenticating = false;
+  BiometricKind _biometricKind = BiometricKind.generic;
   Timer? _countdownTimer;
 
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
@@ -38,6 +42,7 @@ class _LockScreenState extends State<LockScreen> {
     if (_controller.isLockedOut) {
       _startCountdown();
     }
+    _maybePromptBiometrics();
   }
 
   @override
@@ -109,6 +114,42 @@ class _LockScreenState extends State<LockScreen> {
       return 'Incorrect PIN. Try again.';
     }
     return null;
+  }
+
+  /// Offers biometrics exactly once per lock engagement, on the first frame
+  /// after the overlay becomes visible. Unsupported or unenrolled devices
+  /// silently fall back to the PIN keypad.
+  Future<void> _maybePromptBiometrics() async {
+    if (!_controller.biometricEnabled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final supported = await BiometricService.instance.isSupported();
+      if (!mounted || !supported) return;
+      final kind = await BiometricService.instance.getPreferredKind();
+      if (!mounted) return;
+      setState(() {
+        _biometricsAvailable = true;
+        _biometricKind = kind;
+      });
+      await _authenticateBiometrics();
+    });
+  }
+
+  /// Runs the system biometric prompt. On success the existing unlock flow is
+  /// reused; failures and cancellations simply leave the PIN screen active and
+  /// never touch the PIN attempt counter.
+  Future<void> _authenticateBiometrics() async {
+    if (_isAuthenticating || !_biometricsAvailable) return;
+    setState(() => _isAuthenticating = true);
+    final label = BiometricService.instance.labelFor(_biometricKind);
+    final ok = await BiometricService.instance.authenticate(
+      reason: 'Unlock SpendWise with $label',
+    );
+    if (!mounted) return;
+    setState(() => _isAuthenticating = false);
+    if (ok) {
+      _controller.unlock();
+    }
   }
 
   @override
@@ -211,6 +252,26 @@ class _LockScreenState extends State<LockScreen> {
                                   ),
                           ),
                         ),
+                        if (_biometricsAvailable && !_isAuthenticating)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: TextButton.icon(
+                              onPressed: _authenticateBiometrics,
+                              icon: Icon(
+                                Icons.fingerprint,
+                                color: colorPrimary,
+                                size: 22,
+                              ),
+                              label: Text(
+                                'Use ${BiometricService.instance.labelFor(_biometricKind)} Again',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
                         PinPad(
                           disabled: lockedOut || _isVerifying,
                           onDigitPressed: _onDigit,

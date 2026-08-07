@@ -30,10 +30,12 @@ class AppLockController extends ChangeNotifier {
   static const String _kSalt = 'app_lock_salt';
   static const String _kFailedAttempts = 'app_lock_failed_attempts';
   static const String _kLockedUntil = 'app_lock_locked_until';
+  static const String _kBiometricEnabled = 'app_lock_biometric_enabled';
 
   bool _enabled = false;
   bool _isLocked = false;
   bool _initialized = false;
+  bool _biometricEnabled = false;
   String? _pinHash;
   String? _salt;
   int _failedAttempts = 0;
@@ -44,6 +46,10 @@ class AppLockController extends ChangeNotifier {
 
   /// Whether the lock overlay should be visible right now.
   bool get isLocked => _isLocked;
+
+  /// Whether biometric unlock is switched on (only meaningful when App Lock is
+  /// enabled). This preference is per-device and never leaves the device.
+  bool get biometricEnabled => _biometricEnabled;
 
   /// Whether persisted state has been loaded at least once.
   bool get initialized => _initialized;
@@ -74,6 +80,7 @@ class AppLockController extends ChangeNotifier {
     _pinHash = prefs.getString(_kPinHash);
     _salt = prefs.getString(_kSalt);
     _failedAttempts = prefs.getInt(_kFailedAttempts) ?? 0;
+    _biometricEnabled = prefs.getBool(_kBiometricEnabled) ?? false;
     final raw = prefs.getString(_kLockedUntil);
     _lockedUntil = raw == null ? null : DateTime.tryParse(raw);
     if (_lockedUntil != null && !DateTime.now().isBefore(_lockedUntil!)) {
@@ -158,6 +165,15 @@ class AppLockController extends ChangeNotifier {
       _isLocked = false;
       notifyListeners();
     }
+  }
+
+  /// Persists the biometric unlock preference. Never touches Firestore.
+  Future<void> setBiometricEnabled(bool value) async {
+    if (_biometricEnabled == value) return;
+    _biometricEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kBiometricEnabled, value);
+    notifyListeners();
   }
 
   /// Clears an expired lockout window and resets the attempt counter.

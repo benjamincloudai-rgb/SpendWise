@@ -7,6 +7,7 @@ import 'package:spendwise/features/help/screens/terms_screen.dart';
 import 'package:spendwise/features/settings/screens/app_lock_setup_screen.dart';
 import 'package:spendwise/features/settings/services/cache_cleaner_service.dart';
 import 'package:spendwise/services/app_lock_controller.dart';
+import 'package:spendwise/services/biometric_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,7 +19,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatController;
-  bool _isBiometricEnabled = true;
 
   final CacheCleanerService _cacheCleanerService = CacheCleanerService();
   bool _isClearingCache = false;
@@ -309,21 +309,23 @@ class _SettingsScreenState extends State<SettingsScreen>
                 },
               ),
               _buildDivider(),
-              _buildSettingsRow(
-                icon: Icons.fingerprint,
-                title: 'Biometric Authentication',
-                trailingWidget: Switch(
-                  value: _isBiometricEnabled,
-                  activeColor: Colors.white,
-                  activeTrackColor: colorPrimaryContainer,
-                  inactiveThumbColor: colorSecondary,
-                  inactiveTrackColor: colorSurfaceContainerLow,
-                  onChanged: (val) {
-                    setState(() {
-                      _isBiometricEnabled = val;
-                    });
-                  },
-                ),
+              AnimatedBuilder(
+                animation: AppLockController.instance,
+                builder: (context, _) {
+                  final appLockEnabled = AppLockController.instance.enabled;
+                  return _buildSettingsRow(
+                    icon: Icons.fingerprint,
+                    title: 'Biometric Authentication',
+                    trailingWidget: Switch(
+                      value: AppLockController.instance.biometricEnabled,
+                      activeColor: Colors.white,
+                      activeTrackColor: colorPrimaryContainer,
+                      inactiveThumbColor: colorSecondary,
+                      inactiveTrackColor: colorSurfaceContainerLow,
+                      onChanged: appLockEnabled ? _onBiometricChanged : null,
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -575,6 +577,32 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
     );
+  }
+
+  // Toggles the biometric unlock preference. Enabling first verifies the
+  // device supports biometrics; unsupported devices get a Snackbar and the
+  // switch stays off. Disabling simply persists the preference.
+  Future<void> _onBiometricChanged(bool value) async {
+    if (!value) {
+      await AppLockController.instance.setBiometricEnabled(false);
+      return;
+    }
+    final supported = await BiometricService.instance.isSupported();
+    if (!mounted) return;
+    if (!supported) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              'Biometric authentication is not available on this device.',
+              style: GoogleFonts.inter(fontSize: 14),
+            ),
+          ),
+        );
+      return;
+    }
+    await AppLockController.instance.setBiometricEnabled(true);
   }
 
   // Confirmation dialog before clearing temporary SpendWise data
