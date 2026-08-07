@@ -4,7 +4,9 @@ import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/help/screens/privacy_policy_screen.dart';
 import 'package:spendwise/features/help/screens/terms_screen.dart';
+import 'package:spendwise/features/settings/screens/app_lock_setup_screen.dart';
 import 'package:spendwise/features/settings/services/cache_cleaner_service.dart';
+import 'package:spendwise/services/app_lock_controller.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -286,11 +288,24 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           child: Column(
             children: [
-              _buildSettingsRow(
-                icon: Icons.screen_lock_portrait_outlined,
-                title: 'App Lock',
-                onTap: () {
-                  // Placeholder onTap
+              AnimatedBuilder(
+                animation: AppLockController.instance,
+                builder: (context, _) {
+                  return _buildSettingsRow(
+                    icon: Icons.screen_lock_portrait_outlined,
+                    title: 'App Lock',
+                    suffixText: AppLockController.instance.enabled
+                        ? 'Enabled'
+                        : 'Disabled',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AppLockSetupScreen(),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
               _buildDivider(),

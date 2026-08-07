@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_lock_gate.dart';
+import 'services/app_lock_controller.dart';
 import 'services/theme_controller.dart';
 import 'features/authentication/screens/splash_screen.dart';
 
@@ -9,6 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await AppLockController.instance.init();
 
   runApp(const SpendWiseApp());
 }
@@ -30,6 +33,7 @@ class SpendWiseApp extends StatelessWidget {
           themeMode: ThemeController.instance.isDarkMode
               ? ThemeMode.dark
               : ThemeMode.light,
+          builder: (context, child) => AppLockGate(child: child ?? const SizedBox.shrink()),
           home: const SpendWiseSplashScreen(),
         );
       },
