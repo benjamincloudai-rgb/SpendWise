@@ -22,6 +22,8 @@ import 'package:spendwise/core/currency/currencies.dart';
 import 'package:spendwise/features/export/services/transaction_export_service.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
+import 'package:spendwise/features/authentication/screens/login_screen.dart';
+import 'package:spendwise/services/app_lock_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -39,6 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   final TransactionExportService _exportService = TransactionExportService();
 
   bool _isExporting = false;
+
+  bool _isLoggingOut = false;
 
   late Stream<DashboardSummaryModel> _summaryStream;
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
@@ -899,9 +903,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       width: double.infinity,
       height: 52,
       child: OutlinedButton(
-        onPressed: () {
-          // Future Sign out logic
-        },
+        onPressed: _isLoggingOut ? null : _confirmLogout,
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: colorError.withOpacity(0.2), width: 2),
           shape: RoundedRectangleBorder(
@@ -909,12 +911,133 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           foregroundColor: colorError,
         ),
-        child: Text(
-          'Logout',
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        child: _isLoggingOut
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : Text(
+                'Logout',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
+  }
+
+  // Confirmation dialog before logging out
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: colorSurfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          icon: Icon(Icons.logout, color: colorError, size: 40),
+          title: Text(
+            'Logout',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: colorOnSurface,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to log out of SpendWise?',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: colorSecondary,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colorSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                'Logout',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: colorError,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+    await _performLogout();
+  }
+
+  Future<void> _performLogout() async {
+    setState(() {
+      _isLoggingOut = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      // Ensure the App Lock overlay is inactive while logged out. This only
+      // drops the overlay; the PIN, biometric preference and enabled state
+      // are preserved so App Lock keeps working after the next login.
+      AppLockController.instance.unlock();
+
+      if (!mounted) return;
+
+      // Remove the entire authenticated stack so the back button cannot
+      // return to HomeShell.
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoggingOut = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.code == 'network-request-failed'
+                ? 'Network error. Please check your connection and try again.'
+                : 'Unable to log out. Please try again.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoggingOut = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
+      );
+    }
   }
 
   // Footer Component
