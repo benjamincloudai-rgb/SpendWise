@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/app_lock_gate.dart';
@@ -11,6 +12,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await pdfrxFlutterInitialize();
   await AppLockController.instance.init();
 
   runApp(const SpendWiseApp());

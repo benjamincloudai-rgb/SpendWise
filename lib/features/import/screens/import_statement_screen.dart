@@ -4,12 +4,16 @@ import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/import/screens/import_preview_screen.dart';
 import 'package:spendwise/features/import/services/statement_import_service.dart';
+import 'package:spendwise/features/import/widgets/pdf_password_dialog.dart';
 
 /// Entry point for the Bank Statement Import feature.
 ///
 /// Phase 6B: tapping "Import CSV" opens the native file picker, parses the
 /// selected file generically, and opens the preview screen. Phase 8A adds the
-/// same flow for Excel (`.xlsx`) workbooks.
+/// same flow for Excel (`.xlsx`) workbooks. Phase 10B adds the same flow for
+/// text-based PDF statements. Phase 10C adds support for password-protected
+/// PDFs: the pdfrx password provider drives a password dialog, and the import
+/// continues downstream exactly as it does today once the file is unlocked.
 class ImportStatementScreen extends StatelessWidget {
   ImportStatementScreen({super.key});
 
@@ -23,6 +27,17 @@ class ImportStatementScreen extends StatelessWidget {
 
   Future<void> _handleImportExcel(BuildContext context) async {
     final result = await _statementImportService.importExcel();
+    if (context.mounted) await _handleImportResult(context, result);
+  }
+
+  Future<void> _handleImportPdf(BuildContext context) async {
+    // One controller per import keeps a single dialog alive across every
+    // password attempt; it is discarded as soon as the import finishes.
+    final controller = PdfPasswordDialogController(context: context);
+    final result = await _statementImportService.importPdf(
+      passwordProvider: () => controller.awaitPassword(),
+    );
+    controller.closeDialog();
     if (context.mounted) await _handleImportResult(context, result);
   }
 
@@ -143,6 +158,22 @@ class ImportStatementScreen extends StatelessWidget {
                               alpha: 0.3,
                             ),
                             onTap: () => _handleImportExcel(context),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        EntranceAnimation(
+                          delayMs: 390,
+                          child: _buildFileTypeCard(
+                            context: context,
+                            icon: Icons.picture_as_pdf,
+                            title: 'Import PDF',
+                            subtitle:
+                                'Text-based statement from your bank',
+                            iconColor: colorSecondary,
+                            iconBgColor: colorSecondaryFixed.withValues(
+                              alpha: 0.3,
+                            ),
+                            onTap: () => _handleImportPdf(context),
                           ),
                         ),
                       ],
