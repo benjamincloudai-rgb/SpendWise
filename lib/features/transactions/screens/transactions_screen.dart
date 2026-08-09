@@ -10,6 +10,8 @@ import 'package:spendwise/services/transaction_service.dart';
 import 'package:spendwise/services/currency_controller.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
 import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
+import 'package:spendwise/features/transactions/domain/transaction_filters.dart';
+import 'package:spendwise/features/transactions/widgets/transaction_filter_sheet.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -24,17 +26,21 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   final TextEditingController _searchController = TextEditingController();
   final TransactionService _transactionService = TransactionService();
   late final Stream<List<TransactionModel>> _transactionsStream;
-  String _selectedFilter = 'All';
+  TransactionFilters _filters = const TransactionFilters();
 
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
-  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
   Color get colorBackground => Theme.of(context).colorScheme.surface;
   Color get colorSurfaceContainerLowest =>
       Theme.of(context).colorScheme.surfaceContainerLowest;
-  Color get colorSurfaceContainerLow => Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorSurfaceContainer => Theme.of(context).colorScheme.surfaceContainer;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorSurfaceContainer =>
+      Theme.of(context).colorScheme.surfaceContainer;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -73,25 +79,63 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     super.dispose();
   }
 
-  // Reactive computed transaction filters (Excludes obsolete Transfers filter)
+  // Reactive computed transaction filters (Excludes obsolete Transfers filter).
+  // Applies the active sheet filters first, then the existing search query,
+  // over the locally loaded transaction stream. Excludes obsolete Transfers.
   List<TransactionModel> get _filteredTransactions {
-    return _allTransactions.where((tx) {
-      if (_selectedFilter == 'Expenses' && tx.type != TransactionType.expense) {
-        return false;
-      }
-      if (_selectedFilter == 'Income' && tx.type != TransactionType.income) {
-        return false;
-      }
+    return filterTransactions(
+      _allTransactions,
+      _filters,
+      _searchController.text,
+    );
+  }
 
-      final query = _searchController.text.trim().toLowerCase();
-      if (query.isNotEmpty) {
-        final categoryMatch = tx.categoryId.toLowerCase().contains(query);
-        final noteMatch = tx.note?.toLowerCase().contains(query) ?? false;
-        final amountMatch = tx.amount.toString().contains(query);
-        return categoryMatch || noteMatch || amountMatch;
-      }
-      return true;
-    }).toList();
+  // Badge shows for sheet-driven filters only (category/date/amount); the
+  // transaction-type filter is already visible via the filter chips row.
+  bool get _showFilterBadge =>
+      _filters.selectedCategory != null ||
+      _filters.dateFilter != TransactionDateFilter.all ||
+      _filters.minAmount != null ||
+      _filters.maxAmount != null;
+
+  // Opens the filter sheet; commits only when Apply is pressed.
+  Future<void> _showFilterSheet() async {
+    final List<String> categoryNames =
+        _allTransactions
+            .map((tx) => tx.categoryId.trim())
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final TransactionFilters? result =
+        await showModalBottomSheet<TransactionFilters>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: colorSurfaceContainerLowest,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          builder: (context) {
+            return TransactionFilterSheet(
+              initialFilters: _filters,
+              categoryNames: categoryNames,
+            );
+          },
+        );
+
+    if (result != null && mounted) {
+      setState(() {
+        _filters = result;
+      });
+    }
+  }
+
+  // Restores the default (inactive) filter state. Search is left untouched.
+  void _clearFilters() {
+    setState(() {
+      _filters = const TransactionFilters();
+    });
   }
 
   // Groups transactions by date dynamically
@@ -284,7 +328,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             filteredList.isEmpty
                                 ? EntranceAnimation(
                                     delayMs: 300,
-                                    child: _buildEmptyState(),
+                                    child: _allTransactions.isEmpty
+                                        ? _buildEmptyState()
+                                        : _buildNoResultsState(),
                                   )
                                 : Column(
                                     children: groupedMap.keys.map((groupTitle) {
@@ -318,7 +364,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
 
             // --- Fixed Bottom Navigation Bar ---
-            
           ],
         ),
       ),
@@ -364,12 +409,31 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               Row(
                 children: [
                   IconButton(
-                    onPressed: () {},
-                    icon: Icon(Icons.search, color: colorOnSurfaceVariant),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(Icons.filter_list, color: colorOnSurfaceVariant),
+                    onPressed: _showFilterSheet,
+                    tooltip: 'Filter transactions',
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(Icons.filter_list, color: colorOnSurfaceVariant),
+                        if (_showFilterBadge)
+                          Positioned(
+                            top: -2,
+                            right: -4,
+                            child: Container(
+                              width: 9,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                color: colorPrimary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: colorSurfaceContainerLowest,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -469,7 +533,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        CurrencyController.instance.format(sumIncome(_allTransactions)),
+                        CurrencyController.instance.format(
+                          sumIncome(_allTransactions),
+                        ),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -501,7 +567,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        CurrencyController.instance.format(sumExpense(_allTransactions)),
+                        CurrencyController.instance.format(
+                          sumExpense(_allTransactions),
+                        ),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -543,12 +611,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  // Filters Selection Pill Chips Row
+  // Filters Selection Pill Chips Row (single source of truth: _filters.type)
   Widget _buildFilterChips() {
-    final filters = [
-      'All',
-      'Expenses',
-      'Income',
+    final filters = <(String, TransactionType?)>[
+      ('All', null),
+      ('Expenses', TransactionType.expense),
+      ('Income', TransactionType.income),
     ]; // Excludes obsolete Transfers filter
 
     return SingleChildScrollView(
@@ -556,13 +624,16 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: filters.map((filter) {
-          final isSelected = _selectedFilter == filter;
+          final isSelected = _filters.type == filter.$2;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: () {
                 setState(() {
-                  _selectedFilter = filter;
+                  _filters = _filters.copyWith(
+                    type: filter.$2,
+                    clearType: filter.$2 == null,
+                  );
                 });
               },
               child: AnimatedContainer(
@@ -585,7 +656,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       : null,
                 ),
                 child: Text(
-                  filter,
+                  filter.$1,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -638,7 +709,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   // Individual Transaction Card (Redesigned with Inkwell tap routing & long-press delete confirmations)
   Widget _buildTransactionCard(TransactionModel tx) {
-    final style = categoryVisualFor(tx.categoryId); // Maps exactly to categoryId
+    final style = categoryVisualFor(
+      tx.categoryId,
+    ); // Maps exactly to categoryId
     final isExpense = tx.type == TransactionType.expense;
     final isIncome = tx.type == TransactionType.income;
 
@@ -800,5 +873,59 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       ),
     );
   }
-}
 
+  // Empty State Widget when transactions exist but active search/filter
+  // criteria produce no results. Kept distinct from the genuine-empty state.
+  Widget _buildNoResultsState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 128,
+            height: 128,
+            decoration: BoxDecoration(
+              color: colorSurfaceContainerLow,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.search_off,
+              size: 56,
+              color: colorOutlineVariant.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No transactions found',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: colorOnSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try adjusting your search or filters.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 14, color: colorSecondary),
+          ),
+          if (_filters.isActive) ...[
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: _clearFilters,
+              child: Text(
+                'Clear filters',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colorPrimary,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

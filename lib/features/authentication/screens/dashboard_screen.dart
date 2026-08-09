@@ -10,6 +10,7 @@ import 'package:spendwise/features/dashboard/widgets/recent_transactions_widget.
 import 'package:spendwise/features/dashboard/widgets/monthly_spending_widget.dart';
 import 'package:spendwise/features/profile/screens/profile_screen.dart';
 import 'package:spendwise/features/profile/screens/notifications_screen.dart';
+import 'package:spendwise/features/profile/domain/profile_avatars.dart';
 import 'package:spendwise/features/import/screens/import_statement_screen.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
@@ -25,11 +26,19 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardService _dashboardService = DashboardService();
   String userName = "Loading...";
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
 
   @override
   void initState() {
     super.initState();
+    _userStream = _buildUserStream();
     _loadUserData();
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _buildUserStream() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return null;
+    return FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
   }
 
   Future<void> _loadUserData() async {
@@ -53,12 +62,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Strict colors inherited from the login/register theme
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
-  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
   Color get colorBackground => Theme.of(context).colorScheme.surface;
   Color get colorSurfaceContainerLowest =>
       Theme.of(context).colorScheme.surfaceContainerLowest;
-  Color get colorSurfaceContainerLow => Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -66,7 +78,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Secondary, Tertiary, and Error values matching the HTML specification
   Color get colorSecondary => Theme.of(context).colorScheme.secondary;
   Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
-  Color get colorTertiaryContainer => Theme.of(context).colorScheme.tertiaryContainer;
+  Color get colorTertiaryContainer =>
+      Theme.of(context).colorScheme.tertiaryContainer;
   Color get colorError => Theme.of(context).colorScheme.error;
 
   @override
@@ -231,17 +244,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           child: Stack(
             children: [
-              // Subtle overview card internal blur glow
+              // Subtle overview card internal blur glow. Hosts the selected
+              // profile avatar when the user has saved one in Edit Profile.
               Positioned(
                 right: -20,
                 top: -20,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: colorPrimary.withOpacity(0.05),
-                    shape: BoxShape.circle,
-                  ),
+                child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: _userStream,
+                  builder: (context, snapshot) {
+                    final Object? rawKey = snapshot.data?.data()?['avatarKey'];
+                    final bool isKnownAvatarKey =
+                        rawKey is String &&
+                        rawKey.isNotEmpty &&
+                        profileAvatarOptions.any(
+                          (avatar) => avatar.key == rawKey,
+                        );
+                    final bool isUnknownNonEmptyKey =
+                        rawKey is String &&
+                        rawKey.isNotEmpty &&
+                        !isKnownAvatarKey;
+                    final String avatarKey = isKnownAvatarKey
+                        ? rawKey
+                        : defaultProfileAvatarKey;
+                    final ProfileAvatar avatar = profileAvatarFor(avatarKey);
+                    final bool useDecorativeFallback = isUnknownNonEmptyKey;
+
+                    return Container(
+                      width: 120,
+                      height: 120,
+                      decoration: useDecorativeFallback
+                          ? BoxDecoration(
+                              color: colorPrimary.withOpacity(0.05),
+                              shape: BoxShape.circle,
+                            )
+                          : profileAvatarDecoration(avatarKey),
+                      child: useDecorativeFallback
+                          ? null
+                          : Icon(avatar.icon, size: 56, color: avatar.color),
+                    );
+                  },
                 ),
               ),
               Padding(
@@ -304,9 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fit: FlexFit.loose,
                           child: _buildOverviewColumn(
                             'Savings',
-                            CurrencyController.instance.format(
-                              summary.savings,
-                            ),
+                            CurrencyController.instance.format(summary.savings),
                             colorTertiary,
                           ),
                         ),
