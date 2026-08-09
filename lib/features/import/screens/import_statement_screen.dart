@@ -79,7 +79,6 @@ class ImportStatementScreen extends StatelessWidget {
     final Color colorPrimaryFixed = Theme.of(context).colorScheme.primaryFixed;
     final Color colorSecondaryFixed =
         Theme.of(context).colorScheme.secondaryFixed;
-    final Color colorSecondary = Theme.of(context).colorScheme.secondary;
 
     return Scaffold(
       backgroundColor: colorBackground,
@@ -153,9 +152,9 @@ class ImportStatementScreen extends StatelessWidget {
                             title: 'Import Excel (.xlsx)',
                             subtitle:
                                 'Spreadsheet workbook exported from your bank',
-                            iconColor: colorSecondary,
-                            iconBgColor: colorSecondaryFixed.withValues(
-                              alpha: 0.3,
+                            iconColor: colorPrimary,
+                            iconBgColor: colorPrimaryContainer.withValues(
+                              alpha: 0.1,
                             ),
                             onTap: () => _handleImportExcel(context),
                           ),
@@ -169,9 +168,9 @@ class ImportStatementScreen extends StatelessWidget {
                             title: 'Import PDF',
                             subtitle:
                                 'Text-based statement from your bank',
-                            iconColor: colorSecondary,
-                            iconBgColor: colorSecondaryFixed.withValues(
-                              alpha: 0.3,
+                            iconColor: colorPrimary,
+                            iconBgColor: colorPrimaryContainer.withValues(
+                              alpha: 0.1,
                             ),
                             onTap: () => _handleImportPdf(context),
                           ),

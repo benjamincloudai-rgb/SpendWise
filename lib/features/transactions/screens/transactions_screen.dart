@@ -355,7 +355,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black, // Formatted strictly in black
+                      color: colorOnSurface,
                       letterSpacing: -0.5,
                     ),
                   ),

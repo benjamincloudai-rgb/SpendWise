@@ -160,11 +160,7 @@ class _PdfPasswordDialogState extends State<PdfPasswordDialog> {
     final bool isLoading = widget.controller.isLoading.value;
 
     return AlertDialog(
-      icon: Icon(
-        Icons.lock_outline,
-        size: 32,
-        color: colorScheme.primary,
-      ),
+      icon: Icon(Icons.lock_outline, size: 32, color: colorScheme.primary),
       title: Text(
         'Enter PDF Password',
         style: GoogleFonts.inter(
@@ -176,71 +172,79 @@ class _PdfPasswordDialogState extends State<PdfPasswordDialog> {
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 380),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'This bank statement is password protected. '
-              'Enter the password to continue.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: colorScheme.onSurfaceVariant,
-                height: 1.5,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This bank statement is password protected. '
+                'Enter the password to continue.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _passwordController,
-              focusNode: _passwordFocus,
-              autofocus: true,
-              obscureText: _obscureText,
-              enabled: !isLoading,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _submit(),
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                color: colorScheme.onSurface,
-              ),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                labelStyle: GoogleFonts.inter(color: colorScheme.onSurfaceVariant),
-                prefixIcon: Icon(Icons.password, color: colorScheme.secondary),
-                suffixIcon: IconButton(
-                  onPressed: () => setState(() => _obscureText = !_obscureText),
-                  icon: Icon(
-                    _obscureText ? Icons.visibility : Icons.visibility_off,
+              const SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                focusNode: _passwordFocus,
+                autofocus: true,
+                obscureText: _obscureText,
+                enabled: !isLoading,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: colorScheme.onSurface,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  labelStyle: GoogleFonts.inter(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                ),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  prefixIcon: Icon(
+                    Icons.password,
+                    color: colorScheme.secondary,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () =>
+                        setState(() => _obscureText = !_obscureText),
+                    icon: Icon(
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
-            ),
-            if (showError) ...[
+              if (showError) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Incorrect password. Please try again.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.error,
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               Text(
-                'Incorrect password. Please try again.',
+                "If you're unsure of the password, check the email or SMS from "
+                'your bank explaining how the statement password is formed.',
                 style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.error,
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            Text(
-              "If you're unsure of the password, check the email or SMS from "
-              'your bank explaining how the statement password is formed.',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
       actions: [

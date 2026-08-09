@@ -151,28 +151,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     }
   }
 
-  // Opens Flutter date picker overlay styled with SpendWise Green theme
+  // Opens Flutter date picker overlay inheriting the active app theme
   Future<void> _showMonthPicker(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: colorPrimary,
-              onPrimary: Colors.white,
-              onSurface: colorOnSurface,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: colorPrimary),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null && picked != _selectedDate) {
