@@ -409,31 +409,37 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSummaryCardColumn(
-            'Income',
-            CurrencyController.instance.format(_monthlySummary.income),
-            colorOnSurface,
+          Expanded(
+            child: _buildSummaryCardColumn(
+              'Income',
+              CurrencyController.instance.format(_monthlySummary.income),
+              colorOnSurface,
+            ),
           ),
           Container(
             width: 1,
             height: 36,
             color: colorOutlineVariant.withOpacity(0.4),
           ),
-          _buildSummaryCardColumn(
-            'Expenses',
-            CurrencyController.instance.format(_monthlySummary.expense),
-            colorOnSurface,
+          Expanded(
+            child: _buildSummaryCardColumn(
+              'Expenses',
+              CurrencyController.instance.format(_monthlySummary.expense),
+              colorOnSurface,
+            ),
           ),
           Container(
             width: 1,
             height: 36,
             color: colorOutlineVariant.withOpacity(0.4),
           ),
-          _buildSummaryCardColumn(
-            'Savings',
-            CurrencyController.instance.format(_monthlySummary.savings),
-            colorPrimary,
-            isBold: true,
+          Expanded(
+            child: _buildSummaryCardColumn(
+              'Savings',
+              CurrencyController.instance.format(_monthlySummary.savings),
+              colorPrimary,
+              isBold: true,
+            ),
           ),
         ],
       ),
@@ -450,6 +456,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       children: [
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -459,6 +467,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         const SizedBox(height: 6),
         Text(
           value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
@@ -1161,17 +1172,21 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildComparisonColumn(
-                  label: 'Income',
-                  amount: CurrencyController.instance.format(income),
-                  ratio: incomeRatio,
-                  color: colorPrimary,
+                Expanded(
+                  child: _buildComparisonColumn(
+                    label: 'Income',
+                    amount: CurrencyController.instance.format(income),
+                    ratio: incomeRatio,
+                    color: colorPrimary,
+                  ),
                 ),
-                _buildComparisonColumn(
-                  label: 'Expenses',
-                  amount: CurrencyController.instance.format(expense),
-                  ratio: expenseRatio,
-                  color: colorTertiary,
+                Expanded(
+                  child: _buildComparisonColumn(
+                    label: 'Expenses',
+                    amount: CurrencyController.instance.format(expense),
+                    ratio: expenseRatio,
+                    color: colorTertiary,
+                  ),
                 ),
               ],
             ),
@@ -1192,6 +1207,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       children: [
         Text(
           amount,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -1219,6 +1237,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             const SizedBox(width: 6),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -1352,6 +1372,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -1361,6 +1383,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 const SizedBox(height: 6),
                 Text(
                   count,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: colorOnSurfaceVariant,
@@ -1369,37 +1393,42 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: GoogleFonts.inter(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: colorOnSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: colorSurfaceContainer,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  percentage,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  amount,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
                   style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: colorOnSurfaceVariant,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: colorOnSurface,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorSurfaceContainer,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text(
+                    percentage,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: colorOnSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

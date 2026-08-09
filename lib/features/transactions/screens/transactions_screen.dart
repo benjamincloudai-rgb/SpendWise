@@ -411,12 +411,19 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   letterSpacing: 1.2,
                 ),
               ),
-              Text(
-                CurrencyController.instance.format(netBalance(_allTransactions)),
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: colorPrimary,
+              Flexible(
+                child: Text(
+                  CurrencyController.instance.format(
+                    netBalance(_allTransactions),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colorPrimary,
+                  ),
                 ),
               ),
             ],
@@ -712,6 +719,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   children: [
                     Text(
                       tx.categoryId, // Maps exactly to categoryId
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -731,12 +740,18 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   ],
                 ),
               ),
-              Text(
-                "$prefix${CurrencyController.instance.format(tx.amount)}",
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: amountColor,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  "$prefix${CurrencyController.instance.format(tx.amount)}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: amountColor,
+                  ),
                 ),
               ),
             ],

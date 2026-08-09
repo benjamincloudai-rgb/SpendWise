@@ -216,6 +216,8 @@ class RecentTransactionsWidget extends StatelessWidget {
                               children: [
                                 Text(
                                   tx.categoryId,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -235,12 +237,18 @@ class RecentTransactionsWidget extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Text(
-                            "${isExpense ? '- ' : '+ '}${CurrencyController.instance.format(tx.amount)}",
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isExpense ? colorError : colorPrimary,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              "${isExpense ? '- ' : '+ '}${CurrencyController.instance.format(tx.amount)}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isExpense ? colorError : colorPrimary,
+                              ),
                             ),
                           ),
                         ],

@@ -72,9 +72,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
         if (!mounted) return;
 
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const HomeShell()),
+          (route) => false,
         );
       }
     });
@@ -130,9 +131,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
         if (!mounted) return;
 
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomeShell()),
+          (route) => false,
         );
       } else {
         if (!mounted) return;

@@ -5,12 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/features/transactions/screens/add_expense_screen.dart';
 import 'package:spendwise/features/transactions/screens/add_income_screen.dart';
-import 'package:spendwise/features/transactions/screens/transfer_screen.dart';
 import 'package:spendwise/features/budget/screens/budget_screen.dart';
-import 'package:spendwise/features/transactions/screens/transactions_screen.dart';
-import 'package:spendwise/features/statistics/screens/statistics_screen.dart';
-import 'package:spendwise/features/profile/screens/profile_screen.dart';
 import 'package:spendwise/features/dashboard/widgets/recent_transactions_widget.dart';
+import 'package:spendwise/features/dashboard/widgets/monthly_spending_widget.dart';
+import 'package:spendwise/features/profile/screens/profile_screen.dart';
+import 'package:spendwise/features/profile/screens/notifications_screen.dart';
 import 'package:spendwise/features/import/screens/import_statement_screen.dart';
 import 'package:spendwise/models/dashboard_summary_model.dart';
 import 'package:spendwise/services/dashboard_service.dart';
@@ -63,7 +62,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
-  Color get colorOutlineVariant => Theme.of(context).colorScheme.outlineVariant;
 
   // Secondary, Tertiary, and Error values matching the HTML specification
   Color get colorSecondary => Theme.of(context).colorScheme.secondary;
@@ -108,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: EdgeInsets.only(
                   left: screenWidth * 0.05,
                   right: screenWidth * 0.05,
-                  top: 72, // Clears sticky top bar
+                  top: 76, // Clears sticky top bar
                   bottom: 120, // Clears bottom navigation
                 ),
                 child: Center(
@@ -117,11 +115,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 16),
                         _buildOverviewCard(),
                         const SizedBox(height: 24),
                         _buildQuickActionsGrid(),
                         const SizedBox(height: 24),
-                        _buildMonthlySpendingSection(),
+                        MonthlySpendingWidget(),
                         const SizedBox(height: 24),
                         RecentTransactionsWidget(),
                       ],
@@ -168,13 +167,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                onPressed: () {},
+                tooltip: 'Notifications',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
+                  );
+                },
                 icon: Icon(Icons.notifications_none, color: colorSecondary),
               ),
-              CircleAvatar(
-                backgroundColor: colorSurfaceContainerLow,
-                foregroundColor: colorSecondary,
-                child: const Icon(Icons.person),
+              Tooltip(
+                message: 'Profile',
+                child: Semantics(
+                  button: true,
+                  label: 'Profile',
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: colorSurfaceContainerLow,
+                      foregroundColor: colorSecondary,
+                      child: const Icon(Icons.person),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -440,141 +465,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
-  // Monthly Spending Section with Custom Dashed Empty State
-  Widget _buildMonthlySpendingSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Monthly Spending',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorOnSurface,
-              ),
-            ),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                'Analysis',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colorPrimary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        CustomPaint(
-          painter: _DashedBorderPainter(
-            color: colorOutlineVariant.withOpacity(0.5),
-          ),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            decoration: BoxDecoration(
-              color: colorSurfaceContainerLow.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                // Minimal Placeholder Bar Chart Graphic
-                SizedBox(
-                  height: 128,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _buildSpendingBar(0.25),
-                      const SizedBox(width: 8),
-                      _buildSpendingBar(0.50),
-                      const SizedBox(width: 8),
-                      _buildSpendingBar(0.33),
-                      const SizedBox(width: 8),
-                      _buildSpendingBar(0.66),
-                      const SizedBox(width: 8),
-                      _buildSpendingBar(0.50),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No spending data available',
-                  style: GoogleFonts.inter(fontSize: 14, color: colorSecondary),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSpendingBar(double ratio) {
-    return Container(
-      width: 24,
-      height: 128 * ratio,
-      decoration: BoxDecoration(
-        color: colorOutlineVariant.withOpacity(0.3),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
-      ),
-    );
-  }
-}
-
-// Custom painter for dashed borders on card states
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double gap;
-  final double strokeLength;
-  final double borderRadius;
-
-  _DashedBorderPainter({
-    required this.color,
-    this.strokeWidth = 2.0,
-    this.gap = 4.0,
-    this.strokeLength = 6.0,
-    this.borderRadius = 16.0,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-          Radius.circular(borderRadius),
-        ),
-      );
-
-    final pathMetrics = path.computeMetrics();
-    for (final metric in pathMetrics) {
-      double distance = 0.0;
-      while (distance < metric.length) {
-        final extract = metric.extractPath(distance, distance + strokeLength);
-        canvas.drawPath(extract, paint);
-        distance += strokeLength + gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -24,14 +24,18 @@ class StatisticsService {
   }
 
   /// Computes the income, expense, and savings totals for [month].
+  ///
+  /// Delegates to the shared aggregation helpers ([isInMonth] and
+  /// [expenseTotalForMonth]) so the Dashboard Monthly Spending card and the
+  /// Statistics screen use exactly the same month/expense calculation.
   StatisticsSummaryModel computeMonthSummary(
     List<TransactionModel> transactions,
     DateTime month,
   ) {
-    final monthTransactions = _monthTransactions(transactions, month);
-
-    final double income = sumIncome(monthTransactions);
-    final double expense = sumExpense(monthTransactions);
+    final double income = sumIncome(
+      transactions.where((tx) => isInMonth(tx, month)).toList(),
+    );
+    final double expense = expenseTotalForMonth(transactions, month);
 
     return StatisticsSummaryModel(
       income: income,
@@ -98,55 +102,45 @@ class StatisticsService {
   /// Compares the income, expense, and savings of [month] against the previous
   /// calendar month.
   ///
-  /// Reuses [computeMonthSummary] (and therefore [_monthTransactions]) for both
-  /// months so no filtering logic is duplicated. Percent changes are computed
-  /// by [_percentChange], which guards against division by zero.
+  /// Reuses [computeMonthSummary] (and therefore the shared month helpers) for
+  /// both months so no filtering logic is duplicated. Percent changes are
+  /// computed by the shared [percentChange] helper, which guards against
+  /// division by zero.
   MonthComparison computeMonthComparison(
     List<TransactionModel> transactions,
     DateTime month,
   ) {
-    final DateTime previousMonth = DateTime(month.year, month.month - 1, 1);
+    final DateTime previousMonthDate = previousMonth(month);
     final StatisticsSummaryModel current = computeMonthSummary(transactions, month);
     final StatisticsSummaryModel previous =
-        computeMonthSummary(transactions, previousMonth);
+        computeMonthSummary(transactions, previousMonthDate);
 
     return MonthComparison(
       income: MonthDelta(
         current: current.income,
         previous: previous.income,
-        percentChange: _percentChange(current.income, previous.income),
+        percentChange: percentChange(current.income, previous.income),
       ),
       expense: MonthDelta(
         current: current.expense,
         previous: previous.expense,
-        percentChange: _percentChange(current.expense, previous.expense),
+        percentChange: percentChange(current.expense, previous.expense),
       ),
       savings: MonthDelta(
         current: current.savings,
         previous: previous.savings,
-        percentChange: _percentChange(current.savings, previous.savings),
+        percentChange: percentChange(current.savings, previous.savings),
       ),
     );
   }
 
-  /// Percent change from [previous] to [current].
-  ///
-  /// Returns null when [previous] is zero, since a percentage cannot be
-  /// meaningfully computed (guards against division by zero).
-  double? _percentChange(double current, double previous) {
-    if (previous == 0) return null;
-    return (current - previous) / previous * 100;
-  }
-
   /// The transactions belonging to [month] (single source of truth for every
-  /// statistics computation).
+  /// statistics computation). Delegates to the shared [isInMonth] helper.
   List<TransactionModel> _monthTransactions(
     List<TransactionModel> transactions,
     DateTime month,
   ) {
-    return transactions.where((tx) {
-      return tx.date.year == month.year && tx.date.month == month.month;
-    }).toList();
+    return transactions.where((tx) => isInMonth(tx, month)).toList();
   }
 
   /// Groups the expense transactions of [month] by category and resolves each
