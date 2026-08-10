@@ -13,7 +13,9 @@ import 'package:spendwise/services/statistics_service.dart';
 import 'package:spendwise/services/currency_controller.dart';
 
 class StatisticsScreen extends StatefulWidget {
-  const StatisticsScreen({super.key});
+  final VoidCallback? onBackPressed;
+
+  const StatisticsScreen({super.key, this.onBackPressed});
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
@@ -51,14 +53,17 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
-  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
   Color get colorBackground => Theme.of(context).colorScheme.surface;
   Color get colorSurfaceContainerLowest =>
       Theme.of(context).colorScheme.surfaceContainerLowest;
   Color get colorSurfaceContainerLow =>
       Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorSurfaceContainer => Theme.of(context).colorScheme.surfaceContainer;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorSurfaceContainer =>
+      Theme.of(context).colorScheme.surfaceContainer;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -311,7 +316,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             children: [
               // Back Button on the left
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: widget.onBackPressed ?? () => Navigator.pop(context),
                 icon: Icon(Icons.arrow_back, color: colorOnSurface, size: 28),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
@@ -506,8 +511,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     // card, so the chart area scrolls horizontally (bars + labels together)
     // with fixed slot widths to keep bars and labels readable. The card itself
     // keeps its size; Week and the empty state keep the original fixed layout.
-    final bool useScrollableBars =
-        hasTrendData && _selectedTimeframe != 'Week';
+    final bool useScrollableBars = hasTrendData && _selectedTimeframe != 'Week';
     final double trendSlotWidth = _trendSlotWidth(
       MediaQuery.sizeOf(context).width,
       _selectedTimeframe,
@@ -620,7 +624,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        CurrencyController.instance.format(selectedPoint.amount),
+                        CurrencyController.instance.format(
+                          selectedPoint.amount,
+                        ),
                         style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -679,71 +685,67 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                                 ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: displayTrend.asMap().entries.map(
-                                    (entry) {
-                                      final int index = entry.key;
-                                      final point = entry.value;
-                                      final hasSpend = point.amount > 0;
-                                      final bool isSelected =
-                                          _selectedTrendIndex == index;
-                                      final double barHeight = hasSpend
-                                          ? (point.amount / maxTrendAmount) *
-                                              120
-                                          : 4;
-                                      return GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedTrendIndex =
-                                                isSelected ? null : index;
-                                          });
-                                        },
-                                        child: SizedBox(
-                                          width: trendSlotWidth,
-                                          child: Align(
-                                            alignment: Alignment.bottomCenter,
-                                            child: Container(
-                                              width: trendSlotWidth - 8,
-                                              height: barHeight < 4
-                                                  ? 4
-                                                  : barHeight,
-                                              decoration: BoxDecoration(
-                                                color: isSelected
-                                                    ? colorPrimaryContainer
-                                                    : hasSpend
-                                                        ? colorPrimary
-                                                        : colorSurfaceContainer,
-                                                borderRadius: hasTrendData
-                                                    ? const BorderRadius
-                                                        .vertical(
-                                                        top: Radius.circular(8),
-                                                      )
-                                                    : BorderRadius.circular(
-                                                        100,
-                                                      ),
-                                                boxShadow: isSelected
-                                                    ? [
-                                                        BoxShadow(
-                                                          color: colorPrimary
-                                                              .withValues(
-                                                                alpha: 0.3,
-                                                              ),
-                                                          blurRadius: 8,
-                                                          offset:
-                                                              const Offset(
-                                                                0,
-                                                                2,
-                                                              ),
+                                  children: displayTrend.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    final int index = entry.key;
+                                    final point = entry.value;
+                                    final hasSpend = point.amount > 0;
+                                    final bool isSelected =
+                                        _selectedTrendIndex == index;
+                                    final double barHeight = hasSpend
+                                        ? (point.amount / maxTrendAmount) * 120
+                                        : 4;
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedTrendIndex = isSelected
+                                              ? null
+                                              : index;
+                                        });
+                                      },
+                                      child: SizedBox(
+                                        width: trendSlotWidth,
+                                        child: Align(
+                                          alignment: Alignment.bottomCenter,
+                                          child: Container(
+                                            width: trendSlotWidth - 8,
+                                            height: barHeight < 4
+                                                ? 4
+                                                : barHeight,
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? colorPrimaryContainer
+                                                  : hasSpend
+                                                  ? colorPrimary
+                                                  : colorSurfaceContainer,
+                                              borderRadius: hasTrendData
+                                                  ? const BorderRadius.vertical(
+                                                      top: Radius.circular(8),
+                                                    )
+                                                  : BorderRadius.circular(100),
+                                              boxShadow: isSelected
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: colorPrimary
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
+                                                        blurRadius: 8,
+                                                        offset: const Offset(
+                                                          0,
+                                                          2,
                                                         ),
-                                                      ]
-                                                    : null,
-                                              ),
+                                                      ),
+                                                    ]
+                                                  : null,
                                             ),
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ).toList(),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
                               ),
                             ),
@@ -804,57 +806,57 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: displayTrend.asMap().entries.map(
-                              (entry) {
-                                final int index = entry.key;
-                                final point = entry.value;
-                                final hasSpend = point.amount > 0;
-                                final bool isSelected =
-                                    _selectedTrendIndex == index;
-                                final double barHeight = hasSpend
-                                    ? (point.amount / maxTrendAmount) * 120
-                                    : 4;
-                                return Expanded(
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedTrendIndex =
-                                            isSelected ? null : index;
-                                      });
-                                    },
-                                    child: Container(
-                                      height: barHeight < 4 ? 4 : barHeight,
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? colorPrimaryContainer
-                                            : hasSpend
-                                                ? colorPrimary
-                                                : colorSurfaceContainer,
-                                        borderRadius: hasTrendData
-                                            ? const BorderRadius.vertical(
-                                                top: Radius.circular(8),
-                                              )
-                                            : BorderRadius.circular(100),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: colorPrimary
-                                                      .withValues(alpha: 0.3),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
+                            children: displayTrend.asMap().entries.map((entry) {
+                              final int index = entry.key;
+                              final point = entry.value;
+                              final hasSpend = point.amount > 0;
+                              final bool isSelected =
+                                  _selectedTrendIndex == index;
+                              final double barHeight = hasSpend
+                                  ? (point.amount / maxTrendAmount) * 120
+                                  : 4;
+                              return Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedTrendIndex = isSelected
+                                          ? null
+                                          : index;
+                                    });
+                                  },
+                                  child: Container(
+                                    height: barHeight < 4 ? 4 : barHeight,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? colorPrimaryContainer
+                                          : hasSpend
+                                          ? colorPrimary
+                                          : colorSurfaceContainer,
+                                      borderRadius: hasTrendData
+                                          ? const BorderRadius.vertical(
+                                              top: Radius.circular(8),
+                                            )
+                                          : BorderRadius.circular(100),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: colorPrimary.withValues(
+                                                  alpha: 0.3,
                                                 ),
-                                              ]
-                                            : null,
-                                      ),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : null,
                                     ),
                                   ),
-                                );
-                              },
-                            ).toList(),
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ),
                       ),
@@ -968,10 +970,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final donutSegments = _categoryBreakdown
         .where((item) => item.percentage > 0)
         .map(
-          (item) => (
-            sweepFraction: item.percentage / 100,
-            color: item.color,
-          ),
+          (item) => (sweepFraction: item.percentage / 100, color: item.color),
         )
         .toList();
 
@@ -1031,7 +1030,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                           ),
                         ),
                         Text(
-                          CurrencyController.instance.format(_monthlySummary.expense),
+                          CurrencyController.instance.format(
+                            _monthlySummary.expense,
+                          ),
                           style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1053,20 +1054,28 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 childAspectRatio: 3.2,
                 children: breakdown.isEmpty
                     ? [
-                        _buildLegendTile('Food', colorPrimary.withOpacity(0.2), 0.0),
+                        _buildLegendTile(
+                          'Food',
+                          colorPrimary.withOpacity(0.2),
+                          0.0,
+                        ),
                         _buildLegendTile('Shopping', Colors.blue.shade200, 0.0),
-                        _buildLegendTile('Transport', Colors.orange.shade200, 0.0),
+                        _buildLegendTile(
+                          'Transport',
+                          Colors.orange.shade200,
+                          0.0,
+                        ),
                         _buildLegendTile('Bills', Colors.purple.shade200, 0.0),
                       ]
                     : breakdown
-                        .map(
-                          (item) => _buildLegendTile(
-                            item.name,
-                            item.color.withValues(alpha: 0.2),
-                            item.percentage,
-                          ),
-                        )
-                        .toList(),
+                          .map(
+                            (item) => _buildLegendTile(
+                              item.name,
+                              item.color.withValues(alpha: 0.2),
+                              item.percentage,
+                            ),
+                          )
+                          .toList(),
               ),
             ],
           ),
@@ -1303,7 +1312,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 _buildTopCategoryCard(
                   _categoryBreakdown[i].name,
                   '${_categoryBreakdown[i].count} transactions',
-                  CurrencyController.instance.format(_categoryBreakdown[i].amount),
+                  CurrencyController.instance.format(
+                    _categoryBreakdown[i].amount,
+                  ),
                   '${_categoryBreakdown[i].percentage.toStringAsFixed(0)}%',
                   _categoryBreakdown[i].icon,
                   _categoryBreakdown[i].color.withValues(alpha: 0.1),
@@ -1508,10 +1519,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   : CurrencyController.instance.format(0),
             ),
             const SizedBox(height: 12),
-            Container(
-              height: 1,
-              color: colorOutlineVariant,
-            ),
+            Container(height: 1, color: colorOutlineVariant),
             const SizedBox(height: 8),
             Text(
               'vs Last Month',
@@ -1656,4 +1664,3 @@ class _DonutChartPainter extends CustomPainter {
     return false;
   }
 }
-

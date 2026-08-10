@@ -26,7 +26,9 @@ import 'package:spendwise/features/authentication/screens/login_screen.dart';
 import 'package:spendwise/services/app_lock_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onBackPressed;
+
+  const ProfileScreen({super.key, this.onBackPressed});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -232,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Row(
             children: [
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: widget.onBackPressed ?? () => Navigator.pop(context),
                 icon: Icon(Icons.arrow_back, color: colorOnSurface, size: 28),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,

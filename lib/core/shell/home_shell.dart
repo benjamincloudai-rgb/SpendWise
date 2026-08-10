@@ -16,6 +16,8 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
 
+  void _goToDashboard() => setState(() => _currentIndex = 0);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,9 +32,9 @@ class _HomeShellState extends State<HomeShell> {
             index: _currentIndex,
             children: [
               DashboardScreen(),
-              TransactionsScreen(),
-              StatisticsScreen(),
-              ProfileScreen(),
+              TransactionsScreen(onBackPressed: _goToDashboard),
+              StatisticsScreen(onBackPressed: _goToDashboard),
+              ProfileScreen(onBackPressed: _goToDashboard),
             ],
           );
         },

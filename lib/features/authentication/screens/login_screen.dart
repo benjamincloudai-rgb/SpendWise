@@ -9,6 +9,8 @@ import 'package:spendwise/features/authentication/screens/verify_email_screen.da
 import 'package:spendwise/core/shell/home_shell.dart';
 import 'package:spendwise/services/currency_controller.dart';
 import 'package:spendwise/services/theme_controller.dart';
+import 'package:spendwise/services/social_auth_service.dart';
+import 'package:spendwise/services/auth_provider_utils.dart';
 
 class SpendWiseApp extends StatelessWidget {
   const SpendWiseApp({super.key});
@@ -33,10 +35,14 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _floatController;
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
+
+  final SocialAuthService _socialAuthService = SocialAuthService();
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -88,8 +94,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         context,
         MaterialPageRoute(builder: (context) => const HomeShell()),
       );
-
     } on FirebaseAuthException catch (e) {
+      // Reverse-account protection: an email/password attempt against an email
+      // that belongs to a Google-only account must not silently fail. Detect it
+      // and guide the user to sign in with Google (same Firebase UID).
+      if (e.code == 'invalid-credential' ||
+          e.code == 'invalid-login-credentials' ||
+          e.code == 'wrong-password' ||
+          e.code == 'user-not-found') {
+        final email = _emailController.text.trim();
+        if (email.isNotEmpty) {
+          ExistingAccountKind kind = ExistingAccountKind.none;
+          try {
+            kind = existingAccountKind(
+              await _socialAuthService.fetchSignInMethodsForEmail(email),
+            );
+          } catch (_) {}
+          if (kind == ExistingAccountKind.googleOnly) {
+            _showError(
+              'This email is linked to a Google account. Please sign in with '
+              'Google below.',
+            );
+            return;
+          }
+        }
+      }
+
       String errorMessage;
 
       switch (e.code) {
@@ -117,17 +147,93 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           errorMessage = 'Login failed. Please try again.';
       }
 
+      _showError(errorMessage);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    if (_isGoogleLoading) return;
+    setState(() {
+      _isGoogleLoading = true;
+    });
+
+    try {
+      final user = await _socialAuthService.signInWithGoogle();
+      await _completeGoogleSignIn(user);
+    } on GoogleLinkPasswordRequiredException catch (pending) {
+      // An email/password account already exists for this email. Ask for its
+      // password and link the Google credential to that same account instead
+      // of creating a duplicate.
+      final password = await _promptForExistingAccountPassword(pending.email);
+      if (password == null || password.isEmpty) return;
+
+      try {
+        final user = await _socialAuthService
+            .linkGoogleCredentialToExistingAccount(
+              pending: pending,
+              password: password,
+            );
+        await _completeGoogleSignIn(user);
+      } on SocialAuthException catch (e) {
+        _showError(e.message);
+      } catch (_) {
+        _showError('Google Sign-In failed. Please try again.');
+      }
+    } on SocialAuthCancelledException {
+      // User dismissed the Google sheet; treat as a quiet no-op.
+    } on SocialAuthException catch (e) {
+      _showError(e.message);
+    } catch (_) {
+      _showError('Google Sign-In failed. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _completeGoogleSignIn(User user) async {
+    // Create the Firestore profile only when it does not already exist. Never
+    // overwrite an existing user document or its data.
+    await _socialAuthService.ensureUserProfile(displayName: user.displayName);
+
+    if (user.emailVerified) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          duration: const Duration(seconds: 4),
-        ),
+      await CurrencyController.instance.init();
+      await ThemeController.instance.init();
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeShell()),
+      );
+    } else {
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const VerifyEmailScreen()),
       );
     }
   }
 
+  Future<String?> _promptForExistingAccountPassword(String email) {
+    return showDialog<String>(
+      context: context,
+      builder: (context) => _ExistingAccountPasswordDialog(email: email),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+    );
+  }
 
   @override
   void initState() {
@@ -163,25 +269,33 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           Positioned(
             top: -100,
             right: -100,
-            child: BlurBlob(color: colorPrimaryFixed.withOpacity(0.1), size: 500, blur: 100),
+            child: BlurBlob(
+              color: colorPrimaryFixed.withOpacity(0.1),
+              size: 500,
+              blur: 100,
+            ),
           ),
           Positioned(
             bottom: -100,
             left: -100,
-            child: BlurBlob(color: colorSecondaryFixed.withOpacity(0.2), size: 400, blur: 80),
+            child: BlurBlob(
+              color: colorSecondaryFixed.withOpacity(0.2),
+              size: 400,
+              blur: 80,
+            ),
           ),
 
           // --- Main Content ---
           SafeArea(
             child: Center(
-                child: SingleChildScrollView(
+              child: SingleChildScrollView(
                 //physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: screenHeight,
                     maxWidth: 440,
-                   ),
+                  ),
                   child: Column(
                     children: [
                       // Logo Section
@@ -257,10 +371,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               isPassword: true,
                               obscureText: !_isPasswordVisible,
                               onToggleVisibility: () {
-                                setState(() => _isPasswordVisible = !_isPasswordVisible);
+                                setState(
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
+                                );
                               },
                             ),
-                            
+
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
@@ -289,11 +406,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             ElevatedButton(
                               onPressed: _login,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _isLoading ? const Color(0xFF005321) : colorPrimaryContainer,
+                                backgroundColor: _isLoading
+                                    ? const Color(0xFF005321)
+                                    : colorPrimaryContainer,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 elevation: 2,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -308,7 +431,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       ),
                                     )
                                   else ...[
-                                    Text('Sign In', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      'Sign In',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                     const SizedBox(width: 8),
                                     const Icon(Icons.arrow_forward, size: 20),
                                   ],
@@ -325,10 +454,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 children: [
                                   Expanded(child: Divider()),
                                   Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 16),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
                                     child: Text(
                                       'OR CONTINUE WITH',
-                                      style: TextStyle(fontSize: 10, letterSpacing: 1.5, color: Colors.grey),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        letterSpacing: 1.5,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                   ),
                                   Expanded(child: Divider()),
@@ -339,9 +474,36 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             // Social Buttons
                             Row(
                               children: [
-                                Expanded(child: _buildSocialButton('Google', 'assets/icons/google.png',)),
+                                Expanded(
+                                  child: _buildSocialButton(
+                                    'Google',
+                                    'assets/icons/google.png',
+                                    onPressed: _isGoogleLoading
+                                        ? null
+                                        : _signInWithGoogle,
+                                  ),
+                                ),
                                 const SizedBox(width: 16),
-                                Expanded(child: _buildSocialButton('Apple', 'assets/icons/apple.png',)),
+                                Expanded(
+                                  child: _buildSocialButton(
+                                    'Apple',
+                                    'assets/icons/apple.png',
+                                    onPressed: _isGoogleLoading
+                                        ? null
+                                        : () {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Apple will return in '
+                                                  'Doomsday',
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -357,14 +519,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           children: [
                             Text(
                               "Don't have an account?",
-                              style: GoogleFonts.inter(color: colorOnSurfaceVariant),
+                              style: GoogleFonts.inter(
+                                color: colorOnSurfaceVariant,
+                              ),
                             ),
                             TextButton(
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const RegisterScreen(),
+                                    builder: (context) =>
+                                        const RegisterScreen(),
                                   ),
                                 );
                               },
@@ -379,16 +544,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ],
                         ),
                       ),
-                      
                     ],
                   ),
                 ),
               ),
             ),
-         
-        ),
-        
-    ],
+          ),
+        ],
       ),
     );
   }
@@ -411,7 +573,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         prefixIcon: Icon(icon, color: colorOnSurfaceVariant),
         suffixIcon: isPassword
             ? IconButton(
-                icon: Icon(obscureText ? Icons.visibility : Icons.visibility_off, size: 20),
+                icon: Icon(
+                  obscureText ? Icons.visibility : Icons.visibility_off,
+                  size: 20,
+                ),
                 onPressed: onToggleVisibility,
               )
             : null,
@@ -431,9 +596,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildSocialButton(String label, String imagePath) {
+  Widget _buildSocialButton(
+    String label,
+    String imagePath, {
+    VoidCallback? onPressed,
+  }) {
     return OutlinedButton(
-      onPressed: () {},
+      onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12),
         side: BorderSide(color: colorOutlineVariant.withOpacity(0.5)),
@@ -442,15 +611,94 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            imagePath,
-            height: 20,
-            width: 20,
-          ),
+          Image.asset(imagePath, height: 20, width: 20),
           const SizedBox(width: 8),
-          Text(label, style: GoogleFonts.inter(color: colorOnSurface, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: colorOnSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Dialog shown when Google sign-in hits an email that already belongs to an
+/// email/password account. Collects that account's password so the Google
+/// credential can be linked to the existing account (same UID).
+class _ExistingAccountPasswordDialog extends StatefulWidget {
+  const _ExistingAccountPasswordDialog({required this.email});
+
+  final String email;
+
+  @override
+  State<_ExistingAccountPasswordDialog> createState() =>
+      _ExistingAccountPasswordDialogState();
+}
+
+class _ExistingAccountPasswordDialogState
+    extends State<_ExistingAccountPasswordDialog> {
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.pop(context, _passwordController.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Existing account found'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'An account already exists for ${widget.email}. Enter its password '
+            'to link your Google account. Your existing data will be kept.',
+            style: GoogleFonts.inter(fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _passwordController,
+            obscureText: !_isPasswordVisible,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: 'Password',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  size: 20,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(onPressed: _submit, child: const Text('Link Account')),
+      ],
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spendwise/core/widgets/blur_blob.dart';
 import 'package:spendwise/core/widgets/entrance_animation.dart';
+import 'package:spendwise/services/auth_provider_utils.dart';
+import 'package:spendwise/services/social_auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -17,21 +19,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _newController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SocialAuthService _socialAuthService = SocialAuthService();
 
   bool _isCurrentVisible = false;
   bool _isNewVisible = false;
   bool _isConfirmVisible = false;
   bool _isSaving = false;
 
+  // True when the signed-in account has an email/password credential. False
+  // for Google-only accounts, which instead get the "Set Password" flow.
+  late bool _hasPasswordProvider;
+
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
-  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
   Color get colorBackground => Theme.of(context).colorScheme.surface;
   Color get colorSurfaceContainerLowest =>
       Theme.of(context).colorScheme.surfaceContainerLowest;
   Color get colorSurfaceContainerLow =>
       Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -41,6 +50,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Color get colorSecondary => Theme.of(context).colorScheme.secondary;
   Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
   Color get colorError => Theme.of(context).colorScheme.error;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = _auth.currentUser;
+    final providerIds =
+        user?.providerData.map((provider) => provider.providerId).toList() ??
+        const <String>[];
+    _hasPasswordProvider = hasPasswordProvider(providerIds);
+  }
 
   @override
   void dispose() {
@@ -68,47 +87,73 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
 
     try {
-      // Re-authenticate with the current password before updating.
-      final credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: _currentController.text,
-      );
-      await user.reauthenticateWithCredential(credential);
-
-      await user.updatePassword(_newController.text);
-
-      // Never cache passwords: clear controllers after success.
-      _currentController.clear();
-      _newController.clear();
-      _confirmController.clear();
-
-      if (!mounted) return;
-      setState(() {
-        _isSaving = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password updated successfully')),
-      );
-      Navigator.pop(context);
+      if (_hasPasswordProvider) {
+        // Existing email/password account: re-authenticate with the current
+        // password before updating it (unchanged behavior).
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: _currentController.text,
+        );
+        await user.reauthenticateWithCredential(credential);
+        await user.updatePassword(_newController.text);
+        _showSuccess('Password updated successfully');
+      } else {
+        // Google-only account: add an email/password credential to the SAME
+        // Firebase UID. All Firestore data stays intact.
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: _newController.text,
+        );
+        try {
+          await user.linkWithCredential(credential);
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'requires-recent-login') {
+            // Re-authenticate with Google before retrying the link.
+            final googleCredential = await _socialAuthService
+                .reauthenticateWithGoogle();
+            await user.reauthenticateWithCredential(googleCredential);
+            await user.linkWithCredential(credential);
+          } else {
+            rethrow;
+          }
+        }
+        _showSuccess('Password set successfully');
+      }
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSaving = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyError(e))),
-      );
+      _showError(_friendlyError(e));
+    } on SocialAuthCancelledException {
+      // User dismissed the Google re-auth sheet; keep them on the screen.
+    } on SocialAuthException catch (e) {
+      _showError(e.message);
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _isSaving = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
-        ),
-      );
+      _showError('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
+  }
+
+  void _showSuccess(String message) {
+    // Never cache passwords: clear controllers after success.
+    _currentController.clear();
+    _newController.clear();
+    _confirmController.clear();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+    Navigator.pop(context);
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _friendlyError(FirebaseAuthException e) {
@@ -126,6 +171,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         return 'This account has been disabled.';
       case 'requires-recent-login':
         return 'Please sign in again and try again.';
+      case 'provider-already-linked':
+        return 'This account already has a password. Please use Change Password instead.';
       default:
         return 'Unable to change password. Please try again.';
     }
@@ -241,7 +288,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
               const SizedBox(width: 16),
               Text(
-                'Change Password',
+                _hasPasswordProvider ? 'Change Password' : 'Set Password',
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -256,7 +303,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  // Form card with the three password fields
+  // Form card with the password fields
   Widget _buildFormCard() {
     return Container(
       width: double.infinity,
@@ -276,35 +323,39 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Current Password',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: colorSecondary,
-              fontWeight: FontWeight.w600,
+          // Google-only accounts have no existing password to verify, so the
+          // "Current Password" field is only shown for email/password users.
+          if (_hasPasswordProvider) ...[
+            Text(
+              'Current Password',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: colorSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          _buildPasswordField(
-            controller: _currentController,
-            icon: Icons.lock_outline,
-            hintText: 'Enter your current password...',
-            obscureText: !_isCurrentVisible,
-            onToggleVisibility: () {
-              setState(() {
-                _isCurrentVisible = !_isCurrentVisible;
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your current password.';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            _buildPasswordField(
+              controller: _currentController,
+              icon: Icons.lock_outline,
+              hintText: 'Enter your current password...',
+              obscureText: !_isCurrentVisible,
+              onToggleVisibility: () {
+                setState(() {
+                  _isCurrentVisible = !_isCurrentVisible;
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your current password.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
           Text(
-            'New Password',
+            _hasPasswordProvider ? 'New Password' : 'New Password',
             style: GoogleFonts.inter(
               fontSize: 12,
               color: colorSecondary,
@@ -440,7 +491,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
             )
           : Text(
-              'Change Password',
+              _hasPasswordProvider ? 'Change Password' : 'Set Password',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -453,12 +504,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
-        'Use at least 8 characters. Avoid using the same password as other accounts.',
+        _hasPasswordProvider
+            ? 'Use at least 8 characters. Avoid using the same password as other accounts.'
+            : 'Your account was created with Google. Set a password to also '
+                  'sign in with your email. Your existing data is kept.',
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: colorSecondary,
-        ),
+        style: GoogleFonts.inter(fontSize: 12, color: colorSecondary),
       ),
     );
   }

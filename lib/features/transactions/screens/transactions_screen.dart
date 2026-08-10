@@ -14,7 +14,9 @@ import 'package:spendwise/features/transactions/domain/transaction_filters.dart'
 import 'package:spendwise/features/transactions/widgets/transaction_filter_sheet.dart';
 
 class TransactionsScreen extends StatefulWidget {
-  const TransactionsScreen({super.key});
+  final VoidCallback? onBackPressed;
+
+  const TransactionsScreen({super.key, this.onBackPressed});
 
   @override
   State<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -389,7 +391,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed:
+                        widget.onBackPressed ?? () => Navigator.pop(context),
                     icon: Icon(Icons.arrow_back, color: colorPrimary, size: 28),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
