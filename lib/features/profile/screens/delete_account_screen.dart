@@ -5,6 +5,7 @@ import 'package:spendwise/core/widgets/entrance_animation.dart';
 import 'package:spendwise/features/authentication/screens/login_screen.dart';
 import 'package:spendwise/services/account_deletion_service.dart';
 import 'package:spendwise/services/app_lock_controller.dart';
+import 'package:spendwise/services/theme_controller.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -27,7 +28,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       Theme.of(context).colorScheme.surfaceContainerLowest;
   Color get colorSurfaceContainerLow =>
       Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -37,7 +39,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   Color get colorTertiary => Theme.of(context).colorScheme.tertiary;
   Color get colorError => Theme.of(context).colorScheme.error;
   Color get colorErrorContainer => Theme.of(context).colorScheme.errorContainer;
-  Color get colorOnErrorContainer => Theme.of(context).colorScheme.onErrorContainer;
+  Color get colorOnErrorContainer =>
+      Theme.of(context).colorScheme.onErrorContainer;
 
   @override
   void dispose() {
@@ -123,6 +126,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       // the deleted account's App Lock PIN.
       await AppLockController.instance.reset();
 
+      // Reset the active theme so the Login screen returns to default light
+      // mode after the account is deleted.
+      ThemeController.instance.resetToLight();
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your account has been deleted.')),
@@ -136,9 +143,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       setState(() {
         _isDeleting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -373,7 +380,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       decoration: InputDecoration(
         hintText: 'Enter your current password...',
         hintStyle: GoogleFonts.inter(color: colorTertiary, fontSize: 14),
-        prefixIcon: Icon(Icons.lock_outline, color: colorOnSurfaceVariant, size: 22),
+        prefixIcon: Icon(
+          Icons.lock_outline,
+          color: colorOnSurfaceVariant,
+          size: 22,
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -445,10 +456,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       child: Text(
         'This will sign you out and return you to the login screen.',
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: colorSecondary,
-        ),
+        style: GoogleFonts.inter(fontSize: 12, color: colorSecondary),
       ),
     );
   }

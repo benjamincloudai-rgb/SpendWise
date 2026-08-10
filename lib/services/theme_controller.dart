@@ -83,16 +83,27 @@ class ThemeController extends ChangeNotifier {
     if (uid == null) return;
 
     try {
-      await _userDoc(uid).set(
-        {
-          'darkMode': value,
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+      await _userDoc(uid).set({
+        'darkMode': value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (_) {
       // Keep the local selection; the snapshot subscription resyncs.
     }
+  }
+
+  /// Resets the active theme to default light mode.
+  ///
+  /// Local-only: never writes to Firestore, so the user's persisted
+  /// `users/{uid}.darkMode` preference stays intact and is restored on their
+  /// next login. Drops the current Firestore subscription so a later [init]
+  /// builds a fresh subscription for the correct user.
+  void resetToLight() {
+    _subscription?.cancel();
+    _subscription = null;
+    _isDarkMode = false;
+    _loaded = false;
+    notifyListeners();
   }
 
   @override

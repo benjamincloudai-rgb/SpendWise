@@ -26,12 +26,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
   // Exact Colors from the Login/Register/Forgot Password Theme
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
-  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
   Color get colorBackground => Theme.of(context).colorScheme.surface;
   Color get colorSurfaceContainerLowest =>
       Theme.of(context).colorScheme.surfaceContainerLowest;
-  Color get colorSurfaceContainerLow => Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorSurfaceContainerLow =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -201,51 +204,45 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
       // Restart the 60-second countdown upon successful dispatch
       _startCooldown();
     } on FirebaseAuthException catch (e) {
+      String errorMessage;
 
-        String errorMessage;
+      switch (e.code) {
+        case 'network-request-failed':
+          errorMessage = 'No internet connection. Please check your network.';
+          break;
 
-        switch (e.code) {
-          case 'network-request-failed':
-            errorMessage =
-                'No internet connection. Please check your network.';
-            break;
+        case 'too-many-requests':
+          errorMessage =
+              "You've requested too many emails. Please wait before trying again.";
+          break;
 
-          case 'too-many-requests':
-            errorMessage =
-                "You've requested too many emails. Please wait before trying again.";
-            break;
-
-          default:
-            errorMessage =
-                'Unable to resend the verification email.';
-        }
-
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-
-      } catch (_) {
-
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Something went wrong. Please try again.',
-            ),
-          ),
-        );
+        default:
+          errorMessage = 'Unable to resend the verification email.';
       }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
+      );
+    }
   }
 
   Future<void> _useAnotherEmail() async {
     try {
       await FirebaseAuth.instance.signOut();
+      ThemeController.instance.resetToLight();
       if (!mounted) return;
 
       if (Navigator.canPop(context)) {

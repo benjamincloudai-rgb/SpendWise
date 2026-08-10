@@ -49,13 +49,15 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // Strict colors matching the SpendWise design system
   Color get colorPrimary => Theme.of(context).colorScheme.primary;
-  Color get colorPrimaryContainer => Theme.of(context).colorScheme.primaryContainer;
+  Color get colorPrimaryContainer =>
+      Theme.of(context).colorScheme.primaryContainer;
   Color get colorBackground => Theme.of(context).colorScheme.surface;
   Color get colorSurfaceContainerLowest =>
       Theme.of(context).colorScheme.surfaceContainerLowest;
   Color get colorSurfaceContainerLow =>
       Theme.of(context).colorScheme.surfaceContainerLow;
-  Color get colorOnSurfaceVariant => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get colorOnSurfaceVariant =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
   Color get colorOnSurface => Theme.of(context).colorScheme.onSurface;
   Color get colorPrimaryFixed => Theme.of(context).colorScheme.primaryFixed;
   Color get colorSecondaryFixed => Theme.of(context).colorScheme.secondaryFixed;
@@ -295,8 +297,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             : 'Unnamed User';
         final String memberSince = _formatMemberSince(data?['createdAt']);
         final String? email = FirebaseAuth.instance.currentUser?.email;
-        final String displayEmail =
-            (email == null || email.isEmpty) ? '—' : email;
+        final String displayEmail = (email == null || email.isEmpty)
+            ? '—'
+            : email;
         final rawAvatarKey = data?['avatarKey'];
         final String avatarKey =
             rawAvatarKey is String && rawAvatarKey.isNotEmpty
@@ -726,6 +729,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       ],
     );
   }
+
   // Preferences Settings Section List
   Widget _buildPreferencesSection() {
     return Column(
@@ -839,7 +843,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Column(
             children: [
               _buildSettingsRow(
-                icon: Icons.help_outline, 
+                icon: Icons.help_outline,
                 title: 'Help Center',
                 onTap: () {
                   Navigator.push(
@@ -847,8 +851,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     MaterialPageRoute(builder: (_) => const HelpCentreScreen()),
                   );
                 },
-                
-                ),
+              ),
               _buildDivider(),
               _buildSettingsRow(
                 icon: Icons.gavel,
@@ -999,6 +1002,10 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     try {
       await FirebaseAuth.instance.signOut();
+
+      // Reset the active theme to default light mode so the Login screen is
+      // readable. The saved preference is kept and restored on next login.
+      ThemeController.instance.resetToLight();
 
       // Ensure the App Lock overlay is inactive while logged out. This only
       // drops the overlay; the PIN, biometric preference and enabled state
@@ -1171,4 +1178,3 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 }
-
